@@ -1,0 +1,581 @@
+Server running on port 3001
+Environment variables: { JWT_SECRET: 'Set', JWT_EXPIRES_IN: '24h', NODE_ENV: 'development' }
+[Notification Debug] New socket connection: hNTdRcEF4yQBxu6iAAAD
+[Notification Debug] New socket connection: PFgA0Xnh189bWoM2AAAE
+[Notification Debug] User 9 registered for notifications with socket hNTdRcEF4yQBxu6iAAAD
+[Notification Debug] New socket connection: vBHrLSqQFz5Zi2ADAAAF
+[Notification Debug] User 9 registered for notifications with socket PFgA0Xnh189bWoM2AAAE
+[Notification Debug] User 9 registered for notifications with socket vBHrLSqQFz5Zi2ADAAAF
+[Notification Debug] New socket connection: Fg0kM_Z6IzwKr5pFAAAI
+[Notification Debug] User 9 registered for notifications with socket Fg0kM_Z6IzwKr5pFAAAI
+[Notification Debug] New socket connection: isplRFFrnjquN8d6AAAK
+[Notification Debug] New socket connection: XblSn0-glRTj7KJrAAAe
+[Notification Debug] User 9 registered for notifications with socket isplRFFrnjquN8d6AAAK
+[Notification Debug] New socket connection: ee-Armx-unpYBMSoAAEF
+[Notification Debug] User 9 registered for notifications with socket ee-Armx-unpYBMSoAAEF
+[Notification Debug] New socket connection: Yz_DYxNAFk9gtHO_AAEG
+[Notification Debug] New socket connection: CO2YVGxvf-6FAg5FAAEH
+[Notification Debug] New socket connection: 4lDhEA3Pzy68zpqHAAEI
+[Notification Debug] New socket connection: dgTeGTWqp4h5zxTjAAEJ
+[Notification Debug] New socket connection: GSVdvjTGfPxPJZToAAEK
+[Notification Debug] New socket connection: -Y2W9pUb648_cFCGAAEL
+[Notification Debug] New socket connection: lcPyl4sKBhrXNu3HAAEM
+[Notification Debug] New socket connection: PyKH2xtuh0D33zcfAAEN
+[Notification Debug] New socket connection: 5YO1M2GXX_gBJBHHAAEO
+[Notification Debug] New socket connection: Ykoo1YNVYYiJ12InAAEP
+[Notification Debug] New socket connection: otj0zF-tqJccHRehAAEQ
+[Notification Debug] New socket connection: -GWpU5_HXRLQxMDLAAER
+[Notification Debug] New socket connection: QW0z-VlNSyUdjXtXAAES
+[Notification Debug] New socket connection: k8CLsoUdyMz1UIIrAAET
+[Notification Debug] New socket connection: zU5NNC1X2YBNp7saAAEU
+[Notification Debug] New socket connection: VTsYGIPmJ1qNQ4phAAEV
+[Notification Debug] New socket connection: Ewj-FjESLqgTCWdYAAEW
+[Notification Debug] New socket connection: 6UaksozlMnuqOC2wAAEX
+[Notification Debug] New socket connection: Q_1Bkb-OdfMLYDJGAAEY
+[Notification Debug] New socket connection: 9Q1il7cJ4RKXgOL7AAEZ
+[Notification Debug] New socket connection: uFgyQkl5na-I-pxMAAEa
+[Notification Debug] New socket connection: 9yKSrcyLeC4aMJ3WAAEb
+[Notification Debug] New socket connection: abGnP_HTn9PTF8x7AAEc
+[Notification Debug] New socket connection: s8Dn4eDpEASFGvVcAAEd
+[Notification Debug] New socket connection: 0DjuFwgedyhws9daAAEe
+[Notification Debug] New socket connection: x_SHhAeJVrBLtaAhAAEf
+[Notification Debug] New socket connection: eC__th6G9iu1-J2-AAEg
+[Notification Debug] New socket connection: -AyZFn4SCsrjK2tnAAEh
+[Notification Debug] New socket connection: AU7paMNEm1v0yHgKAAEi
+[Notification Debug] New socket connection: x9axSOpOy2ToXQWyAAEj
+[Notification Debug] New socket connection: 3Wnd1zMwdFZhIS53AAEk
+[Notification Debug] New socket connection: 4vP5ztP3SCrOysenAAEl
+[Notification Debug] New socket connection: ePX6_5zShHem_EawAAEm
+[Notification Debug] New socket connection: hoWZ8rqKgoBvXPF0AAEn
+[Notification Debug] New socket connection: kooCt8kSOpXwUVC3AAEo
+[Notification Debug] New socket connection: VqRuWza0OoOv4g2aAAEp
+[Notification Debug] New socket connection: _GgYIKyUYCk8P4q_AAEq
+[Notification Debug] New socket connection: dujy4zWAcSXMdx_aAAEr
+[Notification Debug] New socket connection: CQUzw7JoQZqy0r3yAAEs
+[Notification Debug] New socket connection: QZA7m2-r9_PDGnPkAAEt
+[Notification Debug] New socket connection: AbUwshEoytuYp-99AAEu
+[Notification Debug] New socket connection: NA8-wqEpmTK1XVWGAAEv
+[Notification Debug] New socket connection: fGq22BGHc2zL1SXFAAEw
+[Notification Debug] New socket connection: ow3FOkO-IUhWJoXwAAEx
+[Notification Debug] New socket connection: ihuvCJjXFizF8-lfAAEy
+[Notification Debug] New socket connection: 53U7M0PlEPYbvIgbAAEz
+[Notification Debug] New socket connection: Bs8nCbBZ7zoIntLeAAE0
+[Notification Debug] New socket connection: mIuATvReacUmO5JhAAE1
+[Notification Debug] New socket connection: omwViHt7R4SvdX87AAE2
+[Notification Debug] New socket connection: 10KdQPng3FHBDdBxAAE3
+[Notification Debug] New socket connection: pCeoNObvtiDQdGyWAAE4
+[Notification Debug] New socket connection: D5tJd4W7a_xtkpeiAAE5
+[Notification Debug] New socket connection: Drmevnlkl2EPAXnjAAE6
+[Notification Debug] New socket connection: F9Rg4y4PvIL1RJX2AAE7
+[Notification Debug] New socket connection: B-1z9QYNS6KIs6pAAAE8
+[Notification Debug] New socket connection: HlCJNWFQg_FOXZx7AAE9
+[Notification Debug] New socket connection: lb3aiE7vrwyAOew8AAE-
+[Notification Debug] New socket connection: vYKvyo77ahZKfrILAAE_
+[Notification Debug] New socket connection: SZhhNGKuLGbaW9UHAAFA
+[Notification Debug] New socket connection: Kv2GC4IYVDjzNg7nAAFB
+[Notification Debug] New socket connection: RtVq9Dly0IKVAoitAAFC
+[Notification Debug] New socket connection: ALe90CVzGiesA-5mAAFD
+[Notification Debug] New socket connection: YHI_QOWUhF6uChA7AAFE
+[Notification Debug] New socket connection: ypfHe7rvvrPGzkjCAAFF
+[Notification Debug] New socket connection: K91kRr5dH1-dlyxeAAFG
+[Notification Debug] New socket connection: GcTlY9Vl4s-KHPsIAAFH
+[Notification Debug] New socket connection: NUTl00iwJDDhMdylAAFI
+[Notification Debug] New socket connection: FtqvhWlo8a7ImIpwAAFJ
+[Notification Debug] New socket connection: X17IBePBS1k-Sp4iAAFK
+[Notification Debug] New socket connection: rAP5kYZIDxU4qZQCAAFL
+[Notification Debug] New socket connection: JQBOzuiUy4CVTQ5VAAFM
+[Notification Debug] New socket connection: tsOGTAhNXfTk4Oc6AAFN
+[Notification Debug] New socket connection: N95KkJ8ZnSp5wDkxAAFO
+[Notification Debug] New socket connection: Zzh93H6p9DgZxlATAAFP
+[Notification Debug] New socket connection: 5W3g1kKMmTStapPkAAFQ
+[Notification Debug] New socket connection: IjTDKNmRDEQmmfwsAAFR
+[Notification Debug] New socket connection: -ko5nWOD-SQ7X6olAAFS
+[Notification Debug] New socket connection: FCQzPCq2e3C2j5hRAAFT
+[Notification Debug] New socket connection: Bh7Y-cMloGR2Lb5-AAFU
+[Notification Debug] New socket connection: J7EISGvCz2b9GILAAAFV
+[Notification Debug] New socket connection: OfIu6IF_iVtXoMw7AAFW
+[Notification Debug] New socket connection: xlsdtlT-TKTNApK7AAFX
+[Notification Debug] New socket connection: q-4odPFdwCFCFDtwAAFY
+[Notification Debug] New socket connection: xGINsFDo8EPEhjdaAAFZ
+[Notification Debug] New socket connection: H8voroX5AH9qn9G_AAFa
+[Notification Debug] New socket connection: uEgh9LKCuX1yVUx8AAFb
+[Notification Debug] New socket connection: UJBanFwPnEn_Z5NVAAFc
+[Notification Debug] New socket connection: 6z1dIKtu1xM_buQsAAFd
+[Notification Debug] New socket connection: xL0MEPCZJPN3UnJEAAFe
+[Notification Debug] New socket connection: h3IYWQZAihfoYjo7AAFf
+[Notification Debug] New socket connection: TjGkgebN06XwlVSaAAFg
+[Notification Debug] New socket connection: aNK8mfVe8iFW_OVFAAFh
+[Notification Debug] New socket connection: CxlFiYoobJ__r-3hAAFi
+[Notification Debug] New socket connection: R6LdN5hfJSSo23tKAAFj
+[Notification Debug] New socket connection: ooKAbFswH1bIkAcpAAFk
+[Notification Debug] New socket connection: _oHkSFLwdf6h5Hp4AAFl
+[Notification Debug] New socket connection: IrVA8oui7ZJyVdmuAAFm
+[Notification Debug] New socket connection: svqdhDgZlQ3dm6xqAAFn
+[Notification Debug] New socket connection: uPaBpX0EDlMhhjiQAAFo
+[Notification Debug] New socket connection: D59oUfBYCXL6UtZ5AAFp
+[Notification Debug] New socket connection: Wfank4ySWIcT4qASAAFq
+[Notification Debug] New socket connection: RVMFgsoOm3CsQh42AAFr
+[Notification Debug] New socket connection: Jo0NZvQHJlrsPfm5AAFs
+[Notification Debug] New socket connection: mMCN9Neklh29bypVAAFt
+[Notification Debug] New socket connection: Cdgnnyo08vnSzgX5AAFu
+[Notification Debug] New socket connection: whQtB-SKR0rIXDroAAFv
+[Notification Debug] New socket connection: CKneBr2168MG0-7gAAFw
+[Notification Debug] New socket connection: FQth-aLqf3mNA_N1AAFx
+[Notification Debug] New socket connection: LQ0lFyOp4VPp1LLkAAFy
+[Notification Debug] New socket connection: OAj6ASZwKVVFPATSAAFz
+[Notification Debug] New socket connection: dptDe5rryzHJuxOdAAF0
+[Notification Debug] New socket connection: aXhZgl7bAarvkzkNAAF1
+[Notification Debug] New socket connection: vRIxSwsNvnLYQrPUAAF2
+[Notification Debug] New socket connection: 5u0DpE-zA8BTAZPYAAF3
+[Notification Debug] New socket connection: uIeuJwqIZAHm10pAAAF4
+[Notification Debug] New socket connection: rarM7ift4GhyrRlTAAF5
+[Notification Debug] New socket connection: UbTQ1xRC1gF26fEiAAF6
+[Notification Debug] New socket connection: PvI1QqpjKBL_6M4NAAF7
+[Notification Debug] New socket connection: bMuRefHzu_8J6lhsAAF8
+[Notification Debug] New socket connection: vf0xYRWBV-UhxZ2fAAF9
+[Notification Debug] New socket connection: 7_dL7B73G8svdM1hAAF-
+[Notification Debug] New socket connection: JgUhu3NJSo6FIdN5AAF_
+[Notification Debug] New socket connection: OzPHTGhMvG8NNLzrAAGA
+[Notification Debug] New socket connection: pxyJS9SyH90r2W6XAAGB
+[Notification Debug] New socket connection: n9d-SnS43wYP1oPrAAGC
+[Notification Debug] New socket connection: 7d0fKzRjs9sSGLcEAAGD
+[Notification Debug] New socket connection: cEkK1msAvx8Uuy8sAAGE
+[Notification Debug] New socket connection: wRwyGO_NWkAzbrD8AAGF
+[Notification Debug] New socket connection: 4_JiBt2wklXhiP-oAAGG
+[Notification Debug] New socket connection: PvL_EpVVnKls6BiuAAGH
+[Notification Debug] New socket connection: cYhOWcSJYyzPdL3vAAGI
+[Notification Debug] New socket connection: Y7hig85uI3PSmpYnAAGJ
+[Notification Debug] New socket connection: Hsm_4i6GVOlyTwg5AAGK
+[Notification Debug] New socket connection: Y-IucLDmKR-JPvByAAGL
+[Notification Debug] New socket connection: AfSxlTTY1yVkAg0lAAGM
+[Notification Debug] New socket connection: ok3I8K5cprQxQiknAAGN
+[Notification Debug] New socket connection: yECSMDKFiuiYkBy5AAGO
+[Notification Debug] New socket connection: WlD7pEGJHA-vWLvTAAGP
+[Notification Debug] New socket connection: HCBDhWwGDyAa-EjCAAGQ
+[Notification Debug] New socket connection: xRx-PmNhqPt_JaVqAAGR
+[Notification Debug] New socket connection: 6D12QIHM525mgk71AAGS
+[Notification Debug] New socket connection: -NOoeFsYc4JaX2YoAAGT
+[Notification Debug] New socket connection: q5F8yXb_XWGfrpYIAAGU
+[Notification Debug] New socket connection: Mkn63_yfk5gbeRSmAAGV
+[Notification Debug] New socket connection: wT5NTKRVe12G3QuLAAGW
+[Notification Debug] New socket connection: 5EbMYH8eObF40o8-AAGX
+[Notification Debug] New socket connection: 9IFPmCdH5thk-WcrAAGY
+[Notification Debug] New socket connection: EyW-2n-aNqq2Fb6zAAGZ
+[Notification Debug] New socket connection: XScjxZwGwL0dopVdAAGa
+[Notification Debug] New socket connection: budloZitjIH0l_ooAAGb
+[Notification Debug] New socket connection: xWr1kOwSOjGZylv4AAGc
+[Notification Debug] New socket connection: 3AHJKnAKIfr8oskCAAGd
+[Notification Debug] New socket connection: dIpEXMf25t8b6XoeAAGe
+[Notification Debug] New socket connection: sr3JqLMrzT0_i7vQAAGf
+[Notification Debug] New socket connection: 1h1U5ZgSK_aKKmfcAAGg
+[Notification Debug] New socket connection: lquSM-gPPc7ucd_QAAGh
+[Notification Debug] New socket connection: 7OdfvuxAMqPZtqTmAAGi
+[Notification Debug] New socket connection: RTWrwIO5X-IdQUm6AAGj
+[Notification Debug] New socket connection: ihSeL1MddkE38T0XAAGk
+[Notification Debug] New socket connection: mmDFF6f-uOTsJ6WoAAGl
+[Notification Debug] New socket connection: dSJnMQRIopMbE3fdAAGm
+[Notification Debug] New socket connection: k4Xtpn5Gw0t4OWL5AAGn
+[Notification Debug] New socket connection: Hwafo3on2MJIKKnDAAGo
+[Notification Debug] New socket connection: yMsaoNWuWCfTzOJ5AAGp
+[Notification Debug] New socket connection: 96KxuGStPqOiuTluAAGq
+[Notification Debug] New socket connection: uOtuhOkFTlXi3D0YAAGr
+[Notification Debug] New socket connection: 9Z5IcPYXB6FimRzVAAGs
+[Notification Debug] New socket connection: SLkjvDO8JrfGZG9jAAGt
+[Notification Debug] New socket connection: LGvCkLzmSzXPp2q4AAGu
+[Notification Debug] New socket connection: 3z-HLxCiRSPyg8y9AAGv
+[Notification Debug] New socket connection: uGSd0bP6S5YnR_uAAAGw
+[Notification Debug] New socket connection: IiQtL9AUrKguVtlqAAGx
+[Notification Debug] New socket connection: O0EXLpVJZbGdcACZAAGy
+[Notification Debug] New socket connection: eHrLlJ1j0n7DpEvRAAGz
+[Notification Debug] New socket connection: mTBR-rmJE-a5BOhRAAG0
+[Notification Debug] New socket connection: 8P87VJfLWXinotwbAAG1
+[Notification Debug] New socket connection: cx05I09snylvrYscAAG2
+[Notification Debug] New socket connection: r-1UPuOAN9vB-4zxAAG3
+[Notification Debug] New socket connection: WO6st-MYdlaQzAQVAAG4
+[Notification Debug] New socket connection: 7zcZBpUZkZbmrJXKAAG5
+[Notification Debug] New socket connection: FpfGBPsPrdpBeY18AAG6
+[Notification Debug] New socket connection: 0xhnDIXWtdxQ8nFdAAG7
+[Notification Debug] New socket connection: gg5vUpWFyoz61JCrAAG8
+[Notification Debug] New socket connection: wDojOkPLcp0JS4L8AAG9
+[Notification Debug] New socket connection: 2OczHG6X0zpXpvVOAAG-
+[Notification Debug] New socket connection: 71njcaQ5h3PEWke7AAG_
+[Notification Debug] New socket connection: S0pdEcMOanHJaBofAAHA
+[Notification Debug] New socket connection: Suh6drxvfmnMvcCFAAHB
+[Notification Debug] New socket connection: x4raq2j2k2pBxPxUAAHC
+[Notification Debug] New socket connection: bxkJEY72PLCcYMWlAAHD
+[Notification Debug] New socket connection: pySPEWhrSz3LlQiAAAHE
+[Notification Debug] New socket connection: nvNYrvKbBmJBa39NAAHF
+[Notification Debug] New socket connection: Jmge5VfkVCxo7ag4AAHG
+[Notification Debug] New socket connection: ij0wWgJbLwbRq_CYAAHH
+[Notification Debug] New socket connection: T9dOYazvdl_6AxnpAAHI
+[Notification Debug] New socket connection: SF2ueU1pmKLjgD3uAAHJ
+[Notification Debug] New socket connection: 4AU-m5HM4tbRzmNnAAHK
+[Notification Debug] New socket connection: sA69Smr3bpsbDzKbAAHL
+[Notification Debug] New socket connection: 6UPIEIaBiYxH0cRMAAHM
+[Notification Debug] New socket connection: EKOMqY8EQBmYO9YiAAHN
+[Notification Debug] New socket connection: Kn2STCR4pizOeU1rAAHO
+[Notification Debug] New socket connection: D2RX4U8-90fp9FLkAAHP
+[Notification Debug] New socket connection: p9vHD_vq7PaqTbTWAAHQ
+[Notification Debug] New socket connection: Exc70N1L7FqHF5I4AAHR
+[Notification Debug] New socket connection: qo-ZJP9Em575fcRhAAHS
+[Notification Debug] New socket connection: 8lHYd7OWV6gKwCKnAAHT
+[Notification Debug] New socket connection: 2P8gj3vtYd-Avi77AAHU
+[Notification Debug] New socket connection: wJ9MrAfJcGbMln7RAAHV
+[Notification Debug] New socket connection: PjI9W9zRBXvio6voAAHW
+[Notification Debug] New socket connection: CPatESYdVC3ETF-rAAHX
+[Notification Debug] New socket connection: 7UioFTOXo51jVW8-AAHY
+[Notification Debug] New socket connection: H-aYGxCfmAqQECbjAAHZ
+[Notification Debug] New socket connection: 5wxWiXvNFYcDQ5dnAAHa
+[Notification Debug] New socket connection: caz_Rm-WLDpVZxhmAAHb
+[Notification Debug] New socket connection: itWi5IFSESncwzTsAAHc
+[Notification Debug] New socket connection: b-Wj28ToME9n9J8QAAHd
+[Notification Debug] New socket connection: KzGKHd20Nvj77C8mAAHe
+[Notification Debug] New socket connection: dmc3Jhn2BNUWiNVlAAHf
+[Notification Debug] New socket connection: qIJ5mFAGo6TeyhBrAAHg
+[Notification Debug] New socket connection: iiCSQSGAoX0xbgh0AAHh
+[Notification Debug] New socket connection: F2O43o5ugW2Oa2cIAAHi
+[Notification Debug] New socket connection: EWGkr18acSDwS_TdAAHj
+[Notification Debug] New socket connection: D_Jri-LvyFFDw81fAAHk
+[Notification Debug] New socket connection: AAzw08jaySv8Gfx1AAHl
+[Notification Debug] New socket connection: -_jiGlR5evhWVJ89AAHm
+[Notification Debug] New socket connection: Lho1qtMiBeQ_w4GyAAHn
+[Notification Debug] New socket connection: EbL7JwvIXqjPgHF4AAHo
+[Notification Debug] New socket connection: C8WDhWxVB2hEAhkoAAHp
+[Notification Debug] New socket connection: 7L6o2tgfnNPTwIXZAAHq
+[Notification Debug] New socket connection: 1oMOpFj87N_jqtRlAAHr
+[Notification Debug] New socket connection: -_oze8MM8Bsyz9lBAAHs
+[Notification Debug] New socket connection: yyCqelBt2zAshvDjAAHt
+[Notification Debug] New socket connection: STycs-YRlg7TwFCRAAHu
+[Notification Debug] New socket connection: BnodyZWo_ax93JdOAAHv
+[Notification Debug] New socket connection: qd31ZbJvl6xER-uoAAHw
+[Notification Debug] New socket connection: n6l9buW3536yD9jsAAHx
+[Notification Debug] New socket connection: QcujUyPVdS9LAnc_AAHy
+[Notification Debug] New socket connection: UQ6U151YQmvkYIGQAAHz
+[Notification Debug] New socket connection: tgd6LsbQVxrCzJ--AAH0
+[Notification Debug] New socket connection: zq4VukTGEaXEH0PoAAH1
+[Notification Debug] New socket connection: MXPNmLOofX5rxvb1AAH2
+[Notification Debug] New socket connection: Gb57hry1l0M46m5SAAH3
+[Notification Debug] New socket connection: GMym1HsHyLDymM-XAAH4
+[Notification Debug] New socket connection: IhocUep0H0CPI9hOAAH5
+[Notification Debug] New socket connection: sjsPEJVE9WqCgg1wAAH6
+[Notification Debug] New socket connection: _teBspDiiJGVru_GAAH7
+[Notification Debug] New socket connection: VC-BvxmzpWHJUg4fAAH8
+[Notification Debug] New socket connection: ttfozzcyTmZBYpvaAAH9
+[Notification Debug] User 9 registered for notifications with socket Yz_DYxNAFk9gtHO_AAEG
+[Notification Debug] User 9 registered for notifications with socket CO2YVGxvf-6FAg5FAAEH
+[Notification Debug] User 9 registered for notifications with socket 4lDhEA3Pzy68zpqHAAEI
+[Notification Debug] User 9 registered for notifications with socket dgTeGTWqp4h5zxTjAAEJ
+[Notification Debug] User 9 registered for notifications with socket GSVdvjTGfPxPJZToAAEK
+[Notification Debug] User 9 registered for notifications with socket -Y2W9pUb648_cFCGAAEL
+[Notification Debug] User 9 registered for notifications with socket lcPyl4sKBhrXNu3HAAEM
+[Notification Debug] User 9 registered for notifications with socket PyKH2xtuh0D33zcfAAEN
+[Notification Debug] User 9 registered for notifications with socket 5YO1M2GXX_gBJBHHAAEO
+[Notification Debug] User 9 registered for notifications with socket Ykoo1YNVYYiJ12InAAEP
+[Notification Debug] User 9 registered for notifications with socket otj0zF-tqJccHRehAAEQ
+[Notification Debug] User 9 registered for notifications with socket -GWpU5_HXRLQxMDLAAER
+[Notification Debug] User 9 registered for notifications with socket QW0z-VlNSyUdjXtXAAES
+[Notification Debug] User 9 registered for notifications with socket k8CLsoUdyMz1UIIrAAET
+[Notification Debug] User 9 registered for notifications with socket zU5NNC1X2YBNp7saAAEU
+[Notification Debug] User 9 registered for notifications with socket VTsYGIPmJ1qNQ4phAAEV
+[Notification Debug] User 9 registered for notifications with socket Ewj-FjESLqgTCWdYAAEW
+[Notification Debug] User 9 registered for notifications with socket 6UaksozlMnuqOC2wAAEX
+[Notification Debug] User 9 registered for notifications with socket Q_1Bkb-OdfMLYDJGAAEY
+[Notification Debug] User 9 registered for notifications with socket 9Q1il7cJ4RKXgOL7AAEZ
+[Notification Debug] User 9 registered for notifications with socket uFgyQkl5na-I-pxMAAEa
+[Notification Debug] User 9 registered for notifications with socket 9yKSrcyLeC4aMJ3WAAEb
+[Notification Debug] User 9 registered for notifications with socket abGnP_HTn9PTF8x7AAEc
+[Notification Debug] User 9 registered for notifications with socket s8Dn4eDpEASFGvVcAAEd
+[Notification Debug] User 9 registered for notifications with socket 0DjuFwgedyhws9daAAEe
+[Notification Debug] User 9 registered for notifications with socket x_SHhAeJVrBLtaAhAAEf
+[Notification Debug] User 9 registered for notifications with socket eC__th6G9iu1-J2-AAEg
+[Notification Debug] User 9 registered for notifications with socket -AyZFn4SCsrjK2tnAAEh
+[Notification Debug] User 9 registered for notifications with socket AU7paMNEm1v0yHgKAAEi
+[Notification Debug] User 9 registered for notifications with socket x9axSOpOy2ToXQWyAAEj
+[Notification Debug] User 9 registered for notifications with socket 3Wnd1zMwdFZhIS53AAEk
+[Notification Debug] User 9 registered for notifications with socket 4vP5ztP3SCrOysenAAEl
+[Notification Debug] User 9 registered for notifications with socket ePX6_5zShHem_EawAAEm
+[Notification Debug] User 9 registered for notifications with socket hoWZ8rqKgoBvXPF0AAEn
+[Notification Debug] User 9 registered for notifications with socket kooCt8kSOpXwUVC3AAEo
+[Notification Debug] User 9 registered for notifications with socket VqRuWza0OoOv4g2aAAEp
+[Notification Debug] User 9 registered for notifications with socket _GgYIKyUYCk8P4q_AAEq
+[Notification Debug] User 9 registered for notifications with socket dujy4zWAcSXMdx_aAAEr
+[Notification Debug] User 9 registered for notifications with socket CQUzw7JoQZqy0r3yAAEs
+[Notification Debug] User 9 registered for notifications with socket QZA7m2-r9_PDGnPkAAEt
+[Notification Debug] User 9 registered for notifications with socket AbUwshEoytuYp-99AAEu
+[Notification Debug] User 9 registered for notifications with socket NA8-wqEpmTK1XVWGAAEv
+[Notification Debug] User 9 registered for notifications with socket fGq22BGHc2zL1SXFAAEw
+[Notification Debug] User 9 registered for notifications with socket ow3FOkO-IUhWJoXwAAEx
+[Notification Debug] User 9 registered for notifications with socket ihuvCJjXFizF8-lfAAEy
+[Notification Debug] User 9 registered for notifications with socket 53U7M0PlEPYbvIgbAAEz
+[Notification Debug] User 9 registered for notifications with socket Bs8nCbBZ7zoIntLeAAE0
+[Notification Debug] User 9 registered for notifications with socket mIuATvReacUmO5JhAAE1
+[Notification Debug] User 9 registered for notifications with socket omwViHt7R4SvdX87AAE2
+[Notification Debug] User 9 registered for notifications with socket 10KdQPng3FHBDdBxAAE3
+[Notification Debug] User 9 registered for notifications with socket pCeoNObvtiDQdGyWAAE4
+[Notification Debug] User 9 registered for notifications with socket D5tJd4W7a_xtkpeiAAE5
+[Notification Debug] User 9 registered for notifications with socket Drmevnlkl2EPAXnjAAE6
+[Notification Debug] User 9 registered for notifications with socket F9Rg4y4PvIL1RJX2AAE7
+[Notification Debug] User 9 registered for notifications with socket B-1z9QYNS6KIs6pAAAE8
+[Notification Debug] User 9 registered for notifications with socket HlCJNWFQg_FOXZx7AAE9
+[Notification Debug] User 9 registered for notifications with socket lb3aiE7vrwyAOew8AAE-
+[Notification Debug] User 9 registered for notifications with socket vYKvyo77ahZKfrILAAE_
+[Notification Debug] User 9 registered for notifications with socket SZhhNGKuLGbaW9UHAAFA
+[Notification Debug] User 9 registered for notifications with socket Kv2GC4IYVDjzNg7nAAFB
+[Notification Debug] User 9 registered for notifications with socket RtVq9Dly0IKVAoitAAFC
+[Notification Debug] User 9 registered for notifications with socket ALe90CVzGiesA-5mAAFD
+[Notification Debug] User 9 registered for notifications with socket YHI_QOWUhF6uChA7AAFE
+[Notification Debug] User 9 registered for notifications with socket ypfHe7rvvrPGzkjCAAFF
+[Notification Debug] User 9 registered for notifications with socket K91kRr5dH1-dlyxeAAFG
+[Notification Debug] User 9 registered for notifications with socket GcTlY9Vl4s-KHPsIAAFH
+[Notification Debug] User 9 registered for notifications with socket NUTl00iwJDDhMdylAAFI
+[Notification Debug] User 9 registered for notifications with socket FtqvhWlo8a7ImIpwAAFJ
+[Notification Debug] User 9 registered for notifications with socket X17IBePBS1k-Sp4iAAFK
+[Notification Debug] User 9 registered for notifications with socket rAP5kYZIDxU4qZQCAAFL
+[Notification Debug] User 9 registered for notifications with socket JQBOzuiUy4CVTQ5VAAFM
+[Notification Debug] User 9 registered for notifications with socket tsOGTAhNXfTk4Oc6AAFN
+[Notification Debug] User 9 registered for notifications with socket N95KkJ8ZnSp5wDkxAAFO
+[Notification Debug] User 9 registered for notifications with socket Zzh93H6p9DgZxlATAAFP
+[Notification Debug] User 9 registered for notifications with socket 5W3g1kKMmTStapPkAAFQ
+[Notification Debug] User 9 registered for notifications with socket IjTDKNmRDEQmmfwsAAFR
+[Notification Debug] User 9 registered for notifications with socket -ko5nWOD-SQ7X6olAAFS
+[Notification Debug] User 9 registered for notifications with socket FCQzPCq2e3C2j5hRAAFT
+[Notification Debug] User 9 registered for notifications with socket Bh7Y-cMloGR2Lb5-AAFU
+[Notification Debug] User 9 registered for notifications with socket J7EISGvCz2b9GILAAAFV
+[Notification Debug] User 9 registered for notifications with socket OfIu6IF_iVtXoMw7AAFW
+[Notification Debug] User 9 registered for notifications with socket xlsdtlT-TKTNApK7AAFX
+[Notification Debug] User 9 registered for notifications with socket q-4odPFdwCFCFDtwAAFY
+[Notification Debug] User 9 registered for notifications with socket xGINsFDo8EPEhjdaAAFZ
+[Notification Debug] User 9 registered for notifications with socket H8voroX5AH9qn9G_AAFa
+[Notification Debug] User 9 registered for notifications with socket uEgh9LKCuX1yVUx8AAFb
+[Notification Debug] User 9 registered for notifications with socket UJBanFwPnEn_Z5NVAAFc
+[Notification Debug] User 9 registered for notifications with socket 6z1dIKtu1xM_buQsAAFd
+[Notification Debug] User 9 registered for notifications with socket xL0MEPCZJPN3UnJEAAFe
+[Notification Debug] User 9 registered for notifications with socket h3IYWQZAihfoYjo7AAFf
+[Notification Debug] User 9 registered for notifications with socket TjGkgebN06XwlVSaAAFg
+[Notification Debug] User 9 registered for notifications with socket aNK8mfVe8iFW_OVFAAFh
+[Notification Debug] User 9 registered for notifications with socket CxlFiYoobJ__r-3hAAFi
+[Notification Debug] User 9 registered for notifications with socket R6LdN5hfJSSo23tKAAFj
+[Notification Debug] User 9 registered for notifications with socket ooKAbFswH1bIkAcpAAFk
+[Notification Debug] User 9 registered for notifications with socket _oHkSFLwdf6h5Hp4AAFl
+[Notification Debug] User 9 registered for notifications with socket IrVA8oui7ZJyVdmuAAFm
+[Notification Debug] User 9 registered for notifications with socket svqdhDgZlQ3dm6xqAAFn
+[Notification Debug] User 9 registered for notifications with socket uPaBpX0EDlMhhjiQAAFo
+[Notification Debug] User 9 registered for notifications with socket D59oUfBYCXL6UtZ5AAFp
+[Notification Debug] User 9 registered for notifications with socket Wfank4ySWIcT4qASAAFq
+[Notification Debug] User 9 registered for notifications with socket RVMFgsoOm3CsQh42AAFr
+[Notification Debug] User 9 registered for notifications with socket Jo0NZvQHJlrsPfm5AAFs
+[Notification Debug] User 9 registered for notifications with socket mMCN9Neklh29bypVAAFt
+[Notification Debug] User 9 registered for notifications with socket Cdgnnyo08vnSzgX5AAFu
+[Notification Debug] User 9 registered for notifications with socket whQtB-SKR0rIXDroAAFv
+[Notification Debug] User 9 registered for notifications with socket CKneBr2168MG0-7gAAFw
+[Notification Debug] User 9 registered for notifications with socket FQth-aLqf3mNA_N1AAFx
+[Notification Debug] User 9 registered for notifications with socket LQ0lFyOp4VPp1LLkAAFy
+[Notification Debug] User 9 registered for notifications with socket OAj6ASZwKVVFPATSAAFz
+[Notification Debug] User 9 registered for notifications with socket dptDe5rryzHJuxOdAAF0
+[Notification Debug] User 9 registered for notifications with socket aXhZgl7bAarvkzkNAAF1
+[Notification Debug] User 9 registered for notifications with socket vRIxSwsNvnLYQrPUAAF2
+[Notification Debug] User 9 registered for notifications with socket 5u0DpE-zA8BTAZPYAAF3
+[Notification Debug] User 9 registered for notifications with socket uIeuJwqIZAHm10pAAAF4
+[Notification Debug] User 9 registered for notifications with socket rarM7ift4GhyrRlTAAF5
+[Notification Debug] User 9 registered for notifications with socket UbTQ1xRC1gF26fEiAAF6
+[Notification Debug] User 9 registered for notifications with socket PvI1QqpjKBL_6M4NAAF7
+[Notification Debug] User 9 registered for notifications with socket bMuRefHzu_8J6lhsAAF8
+[Notification Debug] User 9 registered for notifications with socket vf0xYRWBV-UhxZ2fAAF9
+[Notification Debug] User 9 registered for notifications with socket 7_dL7B73G8svdM1hAAF-
+[Notification Debug] User 9 registered for notifications with socket JgUhu3NJSo6FIdN5AAF_
+[Notification Debug] User 9 registered for notifications with socket OzPHTGhMvG8NNLzrAAGA
+[Notification Debug] User 9 registered for notifications with socket pxyJS9SyH90r2W6XAAGB
+[Notification Debug] User 9 registered for notifications with socket n9d-SnS43wYP1oPrAAGC
+[Notification Debug] User 9 registered for notifications with socket 7d0fKzRjs9sSGLcEAAGD
+[Notification Debug] User 9 registered for notifications with socket cEkK1msAvx8Uuy8sAAGE
+[Notification Debug] User 9 registered for notifications with socket wRwyGO_NWkAzbrD8AAGF
+[Notification Debug] User 9 registered for notifications with socket 4_JiBt2wklXhiP-oAAGG
+[Notification Debug] User 9 registered for notifications with socket PvL_EpVVnKls6BiuAAGH
+[Notification Debug] User 9 registered for notifications with socket cYhOWcSJYyzPdL3vAAGI
+[Notification Debug] User 9 registered for notifications with socket Y7hig85uI3PSmpYnAAGJ
+[Notification Debug] User 9 registered for notifications with socket Hsm_4i6GVOlyTwg5AAGK
+[Notification Debug] User 9 registered for notifications with socket Y-IucLDmKR-JPvByAAGL
+[Notification Debug] User 9 registered for notifications with socket AfSxlTTY1yVkAg0lAAGM
+[Notification Debug] User 9 registered for notifications with socket ok3I8K5cprQxQiknAAGN
+[Notification Debug] User 9 registered for notifications with socket yECSMDKFiuiYkBy5AAGO
+[Notification Debug] User 9 registered for notifications with socket WlD7pEGJHA-vWLvTAAGP
+[Notification Debug] User 9 registered for notifications with socket HCBDhWwGDyAa-EjCAAGQ
+[Notification Debug] User 9 registered for notifications with socket xRx-PmNhqPt_JaVqAAGR
+[Notification Debug] User 9 registered for notifications with socket 6D12QIHM525mgk71AAGS
+[Notification Debug] User 9 registered for notifications with socket -NOoeFsYc4JaX2YoAAGT
+[Notification Debug] User 9 registered for notifications with socket q5F8yXb_XWGfrpYIAAGU
+[Notification Debug] User 9 registered for notifications with socket Mkn63_yfk5gbeRSmAAGV
+[Notification Debug] User 9 registered for notifications with socket wT5NTKRVe12G3QuLAAGW
+[Notification Debug] User 9 registered for notifications with socket 5EbMYH8eObF40o8-AAGX
+[Notification Debug] User 9 registered for notifications with socket 9IFPmCdH5thk-WcrAAGY
+[Notification Debug] User 9 registered for notifications with socket EyW-2n-aNqq2Fb6zAAGZ
+[Notification Debug] User 9 registered for notifications with socket XScjxZwGwL0dopVdAAGa
+[Notification Debug] User 9 registered for notifications with socket budloZitjIH0l_ooAAGb
+[Notification Debug] User 9 registered for notifications with socket xWr1kOwSOjGZylv4AAGc
+[Notification Debug] User 9 registered for notifications with socket 3AHJKnAKIfr8oskCAAGd
+[Notification Debug] User 9 registered for notifications with socket dIpEXMf25t8b6XoeAAGe
+[Notification Debug] User 9 registered for notifications with socket sr3JqLMrzT0_i7vQAAGf
+[Notification Debug] User 9 registered for notifications with socket 1h1U5ZgSK_aKKmfcAAGg
+[Notification Debug] User 9 registered for notifications with socket lquSM-gPPc7ucd_QAAGh
+[Notification Debug] User 9 registered for notifications with socket 7OdfvuxAMqPZtqTmAAGi
+[Notification Debug] User 9 registered for notifications with socket RTWrwIO5X-IdQUm6AAGj
+[Notification Debug] User 9 registered for notifications with socket ihSeL1MddkE38T0XAAGk
+[Notification Debug] User 9 registered for notifications with socket mmDFF6f-uOTsJ6WoAAGl
+[Notification Debug] User 9 registered for notifications with socket dSJnMQRIopMbE3fdAAGm
+[Notification Debug] User 9 registered for notifications with socket k4Xtpn5Gw0t4OWL5AAGn
+[Notification Debug] User 9 registered for notifications with socket Hwafo3on2MJIKKnDAAGo
+[Notification Debug] User 9 registered for notifications with socket yMsaoNWuWCfTzOJ5AAGp
+[Notification Debug] User 9 registered for notifications with socket 96KxuGStPqOiuTluAAGq
+[Notification Debug] User 9 registered for notifications with socket uOtuhOkFTlXi3D0YAAGr
+[Notification Debug] User 9 registered for notifications with socket 9Z5IcPYXB6FimRzVAAGs
+[Notification Debug] User 9 registered for notifications with socket SLkjvDO8JrfGZG9jAAGt
+[Notification Debug] User 9 registered for notifications with socket LGvCkLzmSzXPp2q4AAGu
+[Notification Debug] User 9 registered for notifications with socket 3z-HLxCiRSPyg8y9AAGv
+[Notification Debug] User 9 registered for notifications with socket uGSd0bP6S5YnR_uAAAGw
+[Notification Debug] User 9 registered for notifications with socket IiQtL9AUrKguVtlqAAGx
+[Notification Debug] User 9 registered for notifications with socket O0EXLpVJZbGdcACZAAGy
+[Notification Debug] User 9 registered for notifications with socket eHrLlJ1j0n7DpEvRAAGz
+[Notification Debug] User 9 registered for notifications with socket mTBR-rmJE-a5BOhRAAG0
+[Notification Debug] User 9 registered for notifications with socket 8P87VJfLWXinotwbAAG1
+[Notification Debug] User 9 registered for notifications with socket cx05I09snylvrYscAAG2
+[Notification Debug] User 9 registered for notifications with socket r-1UPuOAN9vB-4zxAAG3
+[Notification Debug] User 9 registered for notifications with socket WO6st-MYdlaQzAQVAAG4
+[Notification Debug] User 9 registered for notifications with socket 7zcZBpUZkZbmrJXKAAG5
+[Notification Debug] User 9 registered for notifications with socket FpfGBPsPrdpBeY18AAG6
+[Notification Debug] User 9 registered for notifications with socket 0xhnDIXWtdxQ8nFdAAG7
+[Notification Debug] User 9 registered for notifications with socket gg5vUpWFyoz61JCrAAG8
+[Notification Debug] User 9 registered for notifications with socket wDojOkPLcp0JS4L8AAG9
+[Notification Debug] User 9 registered for notifications with socket 2OczHG6X0zpXpvVOAAG-
+[Notification Debug] User 9 registered for notifications with socket 71njcaQ5h3PEWke7AAG_
+[Notification Debug] User 9 registered for notifications with socket S0pdEcMOanHJaBofAAHA
+[Notification Debug] User 9 registered for notifications with socket Suh6drxvfmnMvcCFAAHB
+[Notification Debug] User 9 registered for notifications with socket x4raq2j2k2pBxPxUAAHC
+[Notification Debug] User 9 registered for notifications with socket bxkJEY72PLCcYMWlAAHD
+[Notification Debug] User 9 registered for notifications with socket pySPEWhrSz3LlQiAAAHE
+[Notification Debug] User 9 registered for notifications with socket nvNYrvKbBmJBa39NAAHF
+[Notification Debug] User 9 registered for notifications with socket Jmge5VfkVCxo7ag4AAHG
+[Notification Debug] User 9 registered for notifications with socket ij0wWgJbLwbRq_CYAAHH
+[Notification Debug] User 9 registered for notifications with socket T9dOYazvdl_6AxnpAAHI
+[Notification Debug] User 9 registered for notifications with socket SF2ueU1pmKLjgD3uAAHJ
+[Notification Debug] User 9 registered for notifications with socket 4AU-m5HM4tbRzmNnAAHK
+[Notification Debug] User 9 registered for notifications with socket sA69Smr3bpsbDzKbAAHL
+[Notification Debug] User 9 registered for notifications with socket 6UPIEIaBiYxH0cRMAAHM
+[Notification Debug] User 9 registered for notifications with socket EKOMqY8EQBmYO9YiAAHN
+[Notification Debug] User 9 registered for notifications with socket Kn2STCR4pizOeU1rAAHO
+[Notification Debug] User 9 registered for notifications with socket D2RX4U8-90fp9FLkAAHP
+[Notification Debug] User 9 registered for notifications with socket p9vHD_vq7PaqTbTWAAHQ
+[Notification Debug] User 9 registered for notifications with socket Exc70N1L7FqHF5I4AAHR
+[Notification Debug] User 9 registered for notifications with socket qo-ZJP9Em575fcRhAAHS
+[Notification Debug] User 9 registered for notifications with socket 8lHYd7OWV6gKwCKnAAHT
+[Notification Debug] User 9 registered for notifications with socket 2P8gj3vtYd-Avi77AAHU
+[Notification Debug] User 9 registered for notifications with socket wJ9MrAfJcGbMln7RAAHV
+[Notification Debug] User 9 registered for notifications with socket PjI9W9zRBXvio6voAAHW
+[Notification Debug] User 9 registered for notifications with socket CPatESYdVC3ETF-rAAHX
+[Notification Debug] User 9 registered for notifications with socket 7UioFTOXo51jVW8-AAHY
+[Notification Debug] User 9 registered for notifications with socket H-aYGxCfmAqQECbjAAHZ
+[Notification Debug] User 9 registered for notifications with socket 5wxWiXvNFYcDQ5dnAAHa
+[Notification Debug] User 9 registered for notifications with socket caz_Rm-WLDpVZxhmAAHb
+[Notification Debug] User 9 registered for notifications with socket itWi5IFSESncwzTsAAHc
+[Notification Debug] User 9 registered for notifications with socket b-Wj28ToME9n9J8QAAHd
+[Notification Debug] User 9 registered for notifications with socket KzGKHd20Nvj77C8mAAHe
+[Notification Debug] User 9 registered for notifications with socket dmc3Jhn2BNUWiNVlAAHf
+[Notification Debug] User 9 registered for notifications with socket qIJ5mFAGo6TeyhBrAAHg
+[Notification Debug] User 9 registered for notifications with socket iiCSQSGAoX0xbgh0AAHh
+[Notification Debug] User 9 registered for notifications with socket F2O43o5ugW2Oa2cIAAHi
+[Notification Debug] User 9 registered for notifications with socket EWGkr18acSDwS_TdAAHj
+[Notification Debug] User 9 registered for notifications with socket D_Jri-LvyFFDw81fAAHk
+[Notification Debug] User 9 registered for notifications with socket AAzw08jaySv8Gfx1AAHl
+[Notification Debug] User 9 registered for notifications with socket -_jiGlR5evhWVJ89AAHm
+[Notification Debug] User 9 registered for notifications with socket Lho1qtMiBeQ_w4GyAAHn
+[Notification Debug] User 9 registered for notifications with socket EbL7JwvIXqjPgHF4AAHo
+[Notification Debug] User 9 registered for notifications with socket C8WDhWxVB2hEAhkoAAHp
+[Notification Debug] User 9 registered for notifications with socket 7L6o2tgfnNPTwIXZAAHq
+[Notification Debug] User 9 registered for notifications with socket 1oMOpFj87N_jqtRlAAHr
+[Notification Debug] User 9 registered for notifications with socket -_oze8MM8Bsyz9lBAAHs
+[Notification Debug] User 9 registered for notifications with socket yyCqelBt2zAshvDjAAHt
+[Notification Debug] User 9 registered for notifications with socket STycs-YRlg7TwFCRAAHu
+[Notification Debug] User 9 registered for notifications with socket BnodyZWo_ax93JdOAAHv
+[Notification Debug] User 9 registered for notifications with socket qd31ZbJvl6xER-uoAAHw
+[Notification Debug] User 9 registered for notifications with socket n6l9buW3536yD9jsAAHx
+[Notification Debug] User 9 registered for notifications with socket QcujUyPVdS9LAnc_AAHy
+[Notification Debug] User 9 registered for notifications with socket UQ6U151YQmvkYIGQAAHz
+[Notification Debug] User 9 registered for notifications with socket tgd6LsbQVxrCzJ--AAH0
+[Notification Debug] User 9 registered for notifications with socket zq4VukTGEaXEH0PoAAH1
+[Notification Debug] User 9 registered for notifications with socket MXPNmLOofX5rxvb1AAH2
+[Notification Debug] User 9 registered for notifications with socket Gb57hry1l0M46m5SAAH3
+[Notification Debug] User 9 registered for notifications with socket GMym1HsHyLDymM-XAAH4
+[Notification Debug] User 9 registered for notifications with socket IhocUep0H0CPI9hOAAH5
+[Notification Debug] User 9 registered for notifications with socket sjsPEJVE9WqCgg1wAAH6
+[Notification Debug] User 9 registered for notifications with socket _teBspDiiJGVru_GAAH7
+[Notification Debug] User 9 registered for notifications with socket VC-BvxmzpWHJUg4fAAH8
+[Notification Debug] User 9 registered for notifications with socket ttfozzcyTmZBYpvaAAH9
+[Notification Debug] New socket connection: QeI7z-3rmmkIPHCwAAH_
+[Notification Debug] User 9 registered for notifications with socket QeI7z-3rmmkIPHCwAAH_
+[Notification Debug] New socket connection: gjnAR4v1QNEe7herAAIC
+[Notification Debug] User 7 registered for notifications with socket gjnAR4v1QNEe7herAAIC
+[Notification Debug] User 7 disconnected (socket gjnAR4v1QNEe7herAAIC)
+[Notification Debug] New socket connection: 9HIUhxcm2WY8SD1oAAIF
+[Notification Debug] User 7 registered for notifications with socket 9HIUhxcm2WY8SD1oAAIF
+[Notification Debug] User 7 disconnected (socket 9HIUhxcm2WY8SD1oAAIF)
+[Notification Debug] New socket connection: gxI1l50z76iwG20yAAIH
+[Notification Debug] User 7 registered for notifications with socket gxI1l50z76iwG20yAAIH
+[Notification Debug] User 9 disconnected (socket QeI7z-3rmmkIPHCwAAH_)
+[Notification Debug] User 7 disconnected (socket gxI1l50z76iwG20yAAIH)
+Get notifications error: error: select * from "notifications" where "user_id" = $1 order by "created_at" desc limit $2 - relation "notifications" does not exist
+    at Parser.parseErrorMessage (/Users/naren/Gatekeepx/node_modules/pg-protocol/dist/parser.js:285:98)
+    at Parser.handlePacket (/Users/naren/Gatekeepx/node_modules/pg-protocol/dist/parser.js:122:29)
+    at Parser.parse (/Users/naren/Gatekeepx/node_modules/pg-protocol/dist/parser.js:35:38)
+    at Socket.<anonymous> (/Users/naren/Gatekeepx/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '15',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1452',
+  routine: 'parserOpenTable'
+}
+Get notifications error: error: select * from "notifications" where "user_id" = $1 order by "created_at" desc limit $2 - relation "notifications" does not exist
+    at Parser.parseErrorMessage (/Users/naren/Gatekeepx/node_modules/pg-protocol/dist/parser.js:285:98)
+    at Parser.handlePacket (/Users/naren/Gatekeepx/node_modules/pg-protocol/dist/parser.js:122:29)
+    at Parser.parse (/Users/naren/Gatekeepx/node_modules/pg-protocol/dist/parser.js:35:38)
+    at Socket.<anonymous> (/Users/naren/Gatekeepx/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '15',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1452',
+  routine: 'parserOpenTable'
+}
+[Notification Debug] New socket connection: KWPn2rNgQXVOcp1hAAIK
+[Notification Debug] User 7 registered for notifications with socket KWPn2rNgQXVOcp1hAAIK
