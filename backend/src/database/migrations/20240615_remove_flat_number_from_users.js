@@ -3,7 +3,7 @@ exports.up = function(knex) {
     table.dropColumn('flat_number');
   });
 };
-
+ 
 exports.down = function(knex) {
   return knex.schema.alterTable('users', function(table) {
     table.string('flat_number');

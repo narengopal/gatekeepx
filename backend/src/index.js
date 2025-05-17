@@ -36,6 +36,37 @@ const io = new Server(server, {
   pingInterval: 25000
 });
 
+// Store connected users
+// Map of userId -> { socketId, role }
+const connectedUsers = new Map();
+
+io.on('connection', (socket) => {
+  console.log('[Socket Debug] New client connected:', socket.id);
+
+  // Accept userId and role in register event
+  socket.on('register', (userId, role) => {
+    if (!role) {
+      console.warn(`[Socket Debug] User registered with undefined role: userId=${userId}, socketId=${socket.id}`);
+      return;
+    }
+    console.log('[Socket Debug] User registered:', userId, 'with role:', role);
+    connectedUsers.set(userId, { socketId: socket.id, role });
+    socket.userId = userId;
+    socket.role = role;
+  });
+
+  socket.on('disconnect', () => {
+    console.log('[Socket Debug] Client disconnected:', socket.id);
+    if (socket.userId) {
+      connectedUsers.delete(socket.userId);
+    }
+  });
+
+  socket.on('error', (error) => {
+    console.error('[Socket Debug] Socket error:', error);
+  });
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -117,12 +148,12 @@ app.post('/api/auth/register', async (req, res) => {
 
     // Check flat occupancy (max 4 residents per flat)
     if (flat_id) {
-      const flatOccupants = await db('users')
+    const flatOccupants = await db('users')
         .where({ flat_id, is_approved: true })
-        .count('* as count')
-        .first();
-      if (flatOccupants.count >= 4) {
-        return res.status(400).json({ error: 'Flat already has maximum number of residents' });
+      .count('* as count')
+      .first();
+    if (flatOccupants.count >= 4) {
+      return res.status(400).json({ error: 'Flat already has maximum number of residents' });
       }
     }
 
@@ -251,37 +282,6 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Store connected users
-// Map of userId -> { socketId, role }
-const connectedUsers = new Map();
-
-io.on('connection', (socket) => {
-  console.log('[Socket Debug] New client connected:', socket.id);
-
-  // Accept userId and role in register event
-  socket.on('register', (userId, role) => {
-    if (!role) {
-      console.warn(`[Socket Debug] User registered with undefined role: userId=${userId}, socketId=${socket.id}`);
-      return;
-    }
-    console.log('[Socket Debug] User registered:', userId, 'with role:', role);
-    connectedUsers.set(userId, { socketId: socket.id, role });
-    socket.userId = userId;
-    socket.role = role;
-  });
-
-  socket.on('disconnect', () => {
-    console.log('[Socket Debug] Client disconnected:', socket.id);
-    if (socket.userId) {
-      connectedUsers.delete(socket.userId);
-    }
-  });
-
-  socket.on('error', (error) => {
-    console.error('[Socket Debug] Socket error:', error);
-  });
-});
-
 // Helper to get flat and block info
 async function getFlatAndBlock(flat_id) {
   if (!flat_id) return { flat: null, block: null };
@@ -292,7 +292,7 @@ async function getFlatAndBlock(flat_id) {
     block = await db('blocks').where({ id: flat.block_id }).first();
   }
   return { flat, block };
-}
+      }
 
 // Guest Management Routes
 app.post('/api/guests', authenticateToken, async (req, res) => {
