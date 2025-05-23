@@ -68,4 +68,32 @@ router.post('/test', async (req, res) => {
   }
 });
 
+// Register and Test route - registers a token and immediately sends a test notification
+router.post('/register-and-test', auth, async (req, res) => {
+  try {
+    const { token, deviceType } = req.body;
+    
+    if (!token) {
+      return res.status(400).json({ error: 'Token is required' });
+    }
+    
+    const result = await fcmService.registerTokenAndTest(req.user.id, token, deviceType);
+    
+    if (result.success) {
+      res.json({ 
+        message: 'Token registered and test notification sent',
+        details: result
+      });
+    } else {
+      res.status(400).json({ 
+        error: 'Failed to register or test token',
+        details: result
+      });
+    }
+  } catch (error) {
+    console.error('Error in register-and-test:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router; 

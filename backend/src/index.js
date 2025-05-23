@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const db = require('./database');
+const { Pool } = require('pg');
 const { generateQRToken, verifyQRToken } = require('./utils/qr');
 const {
   notifyNewVisitor,
@@ -15,7 +15,13 @@ const {
 const http = require('http');
 const { Server } = require('socket.io');
 const fcmRoutes = require('./routes/fcm');
+const notificationsRoutes = require('./routes/notifications');
 const admin = require('./config/firebase');
+const config = require('../knexfile')[process.env.NODE_ENV || 'development'];
+
+// Create database connections
+const pool = new Pool(config.connection);
+const db = require('./database');
 
 // Validate environment variables
 if (!process.env.JWT_SECRET) {
@@ -28,44 +34,258 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:3000",
-    methods: ["GET", "POST"],
-    credentials: true
-  },
-  transports: ['websocket'],
-  pingTimeout: 60000,
-  pingInterval: 25000
+    methods: ["GET", "POST"]
+  }
 });
 
 // Store connected users
-// Map of userId -> { socketId, role }
 const connectedUsers = new Map();
 
 io.on('connection', (socket) => {
   console.log('[Socket Debug] New client connected:', socket.id);
 
-  // Accept userId and role in register event
-  socket.on('register', (userId, role) => {
-    if (!role) {
-      console.warn(`[Socket Debug] User registered with undefined role: userId=${userId}, socketId=${socket.id}`);
-      return;
+  // Handle user registration
+  socket.on('register', async (data) => {
+    try {
+      const { userId, role, token } = data;
+      console.log('[Socket Debug] User registering:', { userId, role });
+      
+      // Validate userId and role are provided
+      if (!userId || !role) {
+        console.error('[Socket Debug] Invalid registration attempt - missing userId or role:', data);
+        socket.emit('registration_error', { message: 'UserId and role are required' });
+        return;
+      }
+      
+      // Validate token if provided
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          console.log('[Socket Debug] Token verification successful for user:', userId);
+          
+          // Verify userId matches token (enhanced security)
+          if (decoded.id !== userId) {
+            console.error('[Socket Debug] UserId mismatch with token:', { tokenUserId: decoded.id, providedUserId: userId });
+            socket.emit('registration_error', { message: 'Authentication failed - user ID mismatch' });
+            return;
+          }
+          
+          // Verify role matches token (enhanced security)
+          if (decoded.role && decoded.role !== role) {
+            console.error('[Socket Debug] Role mismatch with token:', { tokenRole: decoded.role, providedRole: role });
+            socket.emit('registration_error', { message: 'Authentication failed - role mismatch' });
+            return;
+          }
+        } catch (tokenError) {
+          console.error('[Socket Debug] Token verification failed:', tokenError.message);
+          socket.emit('registration_error', { message: 'Invalid authentication token' });
+          return;
+        }
+      } else {
+        // In production, we should require tokens
+        console.warn('[Socket Debug] No token provided for user:', userId);
+      }
+      
+      // Remove any existing connection for this user
+      if (connectedUsers.has(userId)) {
+        const oldSocketId = connectedUsers.get(userId).socketId;
+        console.log('[Socket Debug] Removing old connection:', oldSocketId);
+        io.sockets.sockets.get(oldSocketId)?.disconnect();
+      }
+      
+      // Store user connection
+      connectedUsers.set(userId, { socketId: socket.id, role });
+      console.log('[Socket Debug] User registered successfully:', { userId, role, socketId: socket.id });
+      
+      // Confirm successful registration to client
+      socket.emit('registration_success', { userId, role });
+      
+      // Join role-specific room
+      socket.join(role);
+      
+      // If security user, send initial visitor log
+      if (role === 'security') {
+        try {
+          const visitorLog = await getVisitorLog();
+          console.log('[Socket Debug] Sending initial visitor log:', visitorLog);
+          socket.emit('visitor_log_update', visitorLog);
+        } catch (error) {
+          console.error('[Socket Debug] Error sending initial visitor log:', error);
+        }
+      }
+    } catch (error) {
+      console.error('[Socket Debug] Error in register:', error);
+      socket.emit('registration_error', { message: 'Server error during registration' });
     }
-    console.log('[Socket Debug] User registered:', userId, 'with role:', role);
-    connectedUsers.set(userId, { socketId: socket.id, role });
-    socket.userId = userId;
-    socket.role = role;
   });
 
-  socket.on('disconnect', () => {
-    console.log('[Socket Debug] Client disconnected:', socket.id);
-    if (socket.userId) {
-      connectedUsers.delete(socket.userId);
+  // Handle new manual visitor
+  socket.on('new_manual_visitor', async (data) => {
+    try {
+      console.log('[Socket Debug] New manual visitor:', data);
+      
+      // Get updated visitor log
+      const visitorLog = await getVisitorLog();
+      console.log('[Socket Debug] Sending updated visitor log:', visitorLog);
+      
+      // Broadcast to all security users
+      io.to('security').emit('visitor_log_update', visitorLog);
+    } catch (error) {
+      console.error('[Socket Debug] Error handling new manual visitor:', error);
     }
   });
 
-  socket.on('error', (error) => {
-    console.error('[Socket Debug] Socket error:', error);
+  // Handle visitor status updates
+  socket.on('visitor_status_update', async (data) => {
+    try {
+      const { visitId, status } = data;
+      console.log('[Socket Debug] Visitor status update:', { visitId, status });
+
+      // Update database
+      await pool.query(
+        'UPDATE visits SET status = $1 WHERE id = $2 RETURNING *',
+        [status, visitId]
+      );
+
+      // Get updated visitor log
+      const visitorLog = await getVisitorLog();
+      console.log('[Socket Debug] Sending updated visitor log after status change:', visitorLog);
+      
+      // Broadcast to all security users
+      io.to('security').emit('visitor_log_update', visitorLog);
+
+      // Get visit details for resident notification
+      const visit = await pool.query(
+        'SELECT v.*, g.name, g.phone, g.flat_id FROM visits v JOIN guests g ON v.guest_id = g.id WHERE v.id = $1',
+        [visitId]
+      );
+
+      if (visit.rows[0]) {
+        const { flat_id } = visit.rows[0];
+        // Get resident for this flat
+        const resident = await pool.query(
+          'SELECT id FROM users WHERE flat_id = $1 AND role = $2',
+          [flat_id, 'resident']
+        );
+
+        if (resident.rows[0]) {
+          const residentId = resident.rows[0].id;
+          // Notify resident
+          io.to(residentId).emit('visitor_status_update', {
+            visitId,
+            status,
+            guest: {
+              name: visit.rows[0].name,
+              phone: visit.rows[0].phone
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('[Socket Debug] Error in visitor_status_update:', error);
+    }
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', (reason) => {
+    console.log('[Socket Debug] Client disconnected:', socket.id, 'Reason:', reason);
+    
+    // Store socket ID for logging
+    let disconnectedUserId = null;
+    let disconnectedUserRole = null;
+    
+    // Remove user from connected users
+    for (const [userId, userData] of connectedUsers.entries()) {
+      if (userData.socketId === socket.id) {
+        disconnectedUserId = userId;
+        disconnectedUserRole = userData.role;
+        console.log('[Socket Debug] Removing user from connected users:', { userId, role: userData.role });
+        connectedUsers.delete(userId);
+        break;
+      }
+    }
+    
+    if (!disconnectedUserId) {
+      console.log('[Socket Debug] No registered user found for disconnected socket');
+    } else {
+      // Leave role-specific room
+      if (disconnectedUserRole) {
+        socket.leave(disconnectedUserRole);
+      }
+      
+      // Emit disconnection event to relevant users if needed
+      if (disconnectedUserRole === 'security') {
+        // Notify others that a security guard went offline
+        socket.to('admin').emit('security_status_change', { 
+          userId: disconnectedUserId, 
+          status: 'offline' 
+        });
+      }
+      
+      // Log currently connected users with their roles
+      const connectedRoleCounts = {};
+      for (const [, userData] of connectedUsers.entries()) {
+        connectedRoleCounts[userData.role] = (connectedRoleCounts[userData.role] || 0) + 1;
+      }
+      
+      console.log('[Socket Debug] Connected users after disconnect:', {
+        total: connectedUsers.size,
+        byRole: connectedRoleCounts
+      });
+    }
   });
 });
+
+// Helper function to get visitor log
+async function getVisitorLog() {
+  try {
+    console.log('[Socket Debug] Getting visitor log from database');
+    const result = await pool.query(`
+      SELECT 
+        v.id,
+        v.status,
+        v.created_at,
+        v.expected_arrival,
+        v.purpose,
+        g.name,
+        g.phone,
+        f.number as flat_number
+      FROM visits v
+      JOIN guests g ON v.guest_id = g.id
+      JOIN flats f ON v.flat_id = f.id
+      ORDER BY v.created_at DESC
+    `);
+
+    console.log('[Socket Debug] Raw database result:', result.rows);
+    const visits = result.rows;
+    const formattedLog = {
+      manualRequests: visits.filter(v => !v.purpose).map(v => ({
+        id: v.id,
+        name: v.name,
+        phone: v.phone,
+        status: v.status,
+        created_at: v.created_at,
+        flat_number: v.flat_number
+      })),
+      invitedRequests: visits.filter(v => v.purpose).map(v => ({
+        id: v.id,
+        name: v.name,
+        phone: v.phone,
+        purpose: v.purpose,
+        status: v.status,
+        created_at: v.created_at,
+        expected_arrival: v.expected_arrival,
+        flat_number: v.flat_number
+      }))
+    };
+    
+    console.log('[Socket Debug] Formatted visitor log:', formattedLog);
+    return formattedLog;
+  } catch (error) {
+    console.error('[Socket Debug] Error getting visitor log:', error);
+    return { manualRequests: [], invitedRequests: [] };
+  }
+}
 
 // Middleware
 app.use(cors());
@@ -73,20 +293,32 @@ app.use(express.json());
 
 // Auth middleware
 const authenticateToken = (req, res, next) => {
+  try {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+    if (!authHeader) {
+      console.log('[Auth Debug] No authorization header');
+      return res.status(401).json({ error: 'Access token required' });
+    }
 
+    const token = authHeader.split(' ')[1];
   if (!token) {
+      console.log('[Auth Debug] No token in authorization header');
     return res.status(401).json({ error: 'Access token required' });
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
+        console.log('[Auth Debug] Token verification failed:', err.message);
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
+      console.log('[Auth Debug] Token verified for user:', user);
     req.user = user;
     next();
   });
+  } catch (error) {
+    console.error('[Auth Debug] Authentication error:', error);
+    return res.status(500).json({ error: 'Authentication error' });
+  }
 };
 
 // Auth Routes
@@ -111,15 +343,15 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await db('users').where({ phone }).first();
-    if (existingUser) {
+    const existingUser = await pool.query('SELECT * FROM users WHERE phone = $1', [phone]);
+    if (existingUser.rows.length > 0) {
       return res.status(400).json({ error: 'Phone number already registered' });
     }
 
     // Validate apartment exists
     if (apartment_id) {
-      const apartment = await db('apartments').where({ id: apartment_id }).first();
-      if (!apartment) {
+      const apartment = await pool.query('SELECT * FROM apartments WHERE id = $1', [apartment_id]);
+      if (apartment.rows.length === 0) {
         return res.status(400).json({ error: 'Invalid apartment selected' });
       }
     }
@@ -127,32 +359,24 @@ app.post('/api/auth/register', async (req, res) => {
     // Validate flat exists and belongs to the selected apartment
     if (flat_id) {
       console.log('Checking flat:', { flat_id, apartment_id }); // Debug log
-      const flat = await db('flats')
-        .where({ 
-          id: flat_id,
-          apartment_id: apartment_id
-        })
-        .first();
+      const flat = await pool.query('SELECT * FROM flats WHERE id = $1 AND apartment_id = $2', [flat_id, apartment_id]);
 
-      console.log('Found flat:', flat); // Debug log
+      console.log('Found flat:', flat.rows[0]); // Debug log
 
-      if (!flat) {
+      if (flat.rows.length === 0) {
         return res.status(400).json({ error: 'Invalid flat selected or flat does not belong to the selected apartment' });
       }
 
       // If block_id is provided, validate it matches the flat's block
-      if (block_id && flat.block_id !== parseInt(block_id)) {
+      if (block_id && flat.rows[0].block_id !== parseInt(block_id)) {
         return res.status(400).json({ error: 'Selected block does not match the flat' });
       }
     }
 
     // Check flat occupancy (max 4 residents per flat)
     if (flat_id) {
-    const flatOccupants = await db('users')
-        .where({ flat_id, is_approved: true })
-      .count('* as count')
-      .first();
-    if (flatOccupants.count >= 4) {
+    const flatOccupants = await pool.query('SELECT COUNT(*) FROM users WHERE flat_id = $1 AND is_approved = true', [flat_id]);
+    if (flatOccupants.rows[0].count >= 4) {
       return res.status(400).json({ error: 'Flat already has maximum number of residents' });
       }
     }
@@ -160,49 +384,47 @@ app.post('/api/auth/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     // Create user with explicit type conversion
-    const [user] = await db('users').insert({
+    const result = await pool.query('INSERT INTO users (name, phone, password, role, apartment_id, flat_id, is_approved) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *', [
       name,
       phone,
-      password: hashedPassword,
+      hashedPassword,
       role,
-      apartment_id: apartment_id ? parseInt(apartment_id) : null,
-      flat_id: flat_id ? parseInt(flat_id) : null,
-      is_approved: role === 'resident' ? false : true
-    }).returning('*');
+      apartment_id ? parseInt(apartment_id) : null,
+      flat_id ? parseInt(flat_id) : null,
+      role === 'resident' ? false : true
+    ]);
 
-    console.log('Created user:', user); // Debug log
+    console.log('Created user:', result.rows[0]); // Debug log
 
     // Notify admin of new user registration
     if (role === 'resident') {
       try {
-        const admins = await db('users')
-          .where({ role: 'admin', is_approved: true })
-          .select('id');
+        const admins = await pool.query('SELECT id FROM users WHERE role = $1 AND is_approved = true', ['admin']);
 
         // Get apartment and flat details for notification
-        const apartment = await db('apartments').where({ id: apartment_id }).first();
-        const flat = await db('flats').where({ id: flat_id }).first();
-        const block = flat.block_id ? await db('blocks').where({ id: flat.block_id }).first() : null;
+        const apartment = await pool.query('SELECT id, name FROM apartments WHERE id = $1', [apartment_id]);
+        const flat = await pool.query('SELECT id, number FROM flats WHERE id = $1', [flat_id]);
+        const block = flat.rows.length > 0 && flat.rows[0].block_id ? await pool.query('SELECT id, name FROM blocks WHERE id = $1', [flat.rows[0].block_id]) : null;
 
         // Notify all admins
-        for (const admin of admins) {
+        for (const admin of admins.rows) {
           await notifyNewUser(admin.id, {
-            id: user.id,
-            name: user.name,
-            phone: user.phone,
-            role: user.role,
-            apartment: {
-              id: apartment.id,
-              name: apartment.name
-            },
-            flat: {
-              id: flat.id,
-              number: flat.number,
+            id: result.rows[0].id,
+            name: result.rows[0].name,
+            phone: result.rows[0].phone,
+            role: result.rows[0].role,
+            apartment: apartment.rows.length > 0 ? {
+              id: apartment.rows[0].id,
+              name: apartment.rows[0].name
+            } : null,
+            flat: flat.rows.length > 0 ? {
+              id: flat.rows[0].id,
+              number: flat.rows[0].number,
               block: block ? {
-                id: block.id,
-                name: block.name
+                id: block.rows[0].id,
+                name: block.rows[0].name
               } : null
-            }
+            } : null
           });
         }
       } catch (notificationError) {
@@ -214,13 +436,13 @@ app.post('/api/auth/register', async (req, res) => {
     res.status(201).json({
       message: 'Registration successful. ' + (role === 'resident' ? 'Awaiting admin approval.' : 'Account created.'),
       user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        role: user.role,
-        apartment_id: user.apartment_id,
-        flat_id: user.flat_id,
-        is_approved: user.is_approved
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        phone: result.rows[0].phone,
+        role: result.rows[0].role,
+        apartment_id: result.rows[0].apartment_id,
+        flat_id: result.rows[0].flat_id,
+        is_approved: result.rows[0].is_approved
       }
     });
   } catch (error) {
@@ -239,27 +461,27 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { phone, password } = req.body;
-    const user = await db('users').where({ phone }).first();
+    const user = await pool.query('SELECT * FROM users WHERE phone = $1', [phone]);
 
-    if (!user) {
+    if (user.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const validPassword = await bcrypt.compare(password, user.password);
+    const validPassword = await bcrypt.compare(password, user.rows[0].password);
     if (!validPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    if (!user.is_approved) {
+    if (!user.rows[0].is_approved) {
       return res.status(403).json({ error: 'Account pending approval' });
     }
 
     const token = jwt.sign(
       { 
-        id: user.id, 
-        role: user.role,
-        flat_id: user.flat_id,
-        apartment_id: user.apartment_id 
+        id: user.rows[0].id, 
+        role: user.rows[0].role,
+        flat_id: user.rows[0].flat_id,
+        apartment_id: user.rows[0].apartment_id 
       }, 
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
@@ -268,12 +490,12 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({
       token,
       user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        role: user.role,
-        flat_id: user.flat_id,
-        apartment_id: user.apartment_id
+        id: user.rows[0].id,
+        name: user.rows[0].name,
+        phone: user.rows[0].phone,
+        role: user.rows[0].role,
+        flat_id: user.rows[0].flat_id,
+        apartment_id: user.rows[0].apartment_id
       }
     });
   } catch (error) {
@@ -285,13 +507,13 @@ app.post('/api/auth/login', async (req, res) => {
 // Helper to get flat and block info
 async function getFlatAndBlock(flat_id) {
   if (!flat_id) return { flat: null, block: null };
-  const flat = await db('flats').where({ id: flat_id }).first();
-  if (!flat) return { flat: null, block: null };
+  const flat = await pool.query('SELECT * FROM flats WHERE id = $1', [flat_id]);
+  if (flat.rows.length === 0) return { flat: null, block: null };
   let block = null;
-  if (flat.block_id) {
-    block = await db('blocks').where({ id: flat.block_id }).first();
+  if (flat.rows[0].block_id) {
+    block = await pool.query('SELECT * FROM blocks WHERE id = $1', [flat.rows[0].block_id]);
   }
-  return { flat, block };
+  return { flat: flat.rows[0], block: block ? block.rows[0] : null };
       }
 
 // Guest Management Routes
@@ -300,49 +522,47 @@ app.post('/api/guests', authenticateToken, async (req, res) => {
     const { name, phone, purpose, expected_arrival } = req.body;
     
     // Create guest record
-    const [guest] = await db('guests').insert({
+    const result = await pool.query('INSERT INTO guests (name, phone, invited_by, is_daily_pass) VALUES ($1, $2, $3, $4) RETURNING *', [
       name,
       phone,
-      invited_by: req.user.id,
-      is_daily_pass: false
-    }).returning('*');
+      req.user.id,
+      false
+    ]);
 
     // Get flat ID
-    const flat = await db('flats')
-      .where({ id: req.user.flat_id })
-      .first();
-    if (!flat) {
+    const flat = await pool.query('SELECT * FROM flats WHERE id = $1', [req.user.flat_id]);
+    if (flat.rows.length === 0) {
       throw new Error('Flat not found');
     }
 
     // Generate QR token
-    const qr_token = generateQRToken(guest.id, guest.name, req.user.flat_id);
+    const qr_token = generateQRToken(result.rows[0].id, result.rows[0].name, req.user.flat_id);
 
     // Create visit record
-    const [visit] = await db('visits').insert({
-      guest_id: guest.id,
-      flat_id: flat.id,
-      status: 'pending',
+    const visitResult = await pool.query('INSERT INTO visits (guest_id, flat_id, status, purpose, expected_arrival, qr_token) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [
+      result.rows[0].id,
+      flat.rows[0].id,
+      'pending',
       purpose,
       expected_arrival,
       qr_token
-    }).returning('*');
+    ]);
 
     // Notify resident (pass guest name and flat number)
-    await notifyNewVisitor(req.user.id, guest.name, flat.number, io, connectedUsers);
+    await notifyNewVisitor(req.user.id, result.rows[0].name, flat.rows[0].number, io, connectedUsers);
 
     console.log('Generated QR token:', qr_token); // Debug log
 
     res.status(201).json({ 
       qr_token,
       guest: {
-        name: guest.name,
-        phone: guest.phone
+        name: result.rows[0].name,
+        phone: result.rows[0].phone
       },
       visit: {
         purpose,
         expected_arrival,
-        status: visit.status
+        status: visitResult.rows[0].status
       }
     });
   } catch (error) {
@@ -357,36 +577,45 @@ app.get('/api/guests', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Resident access required' });
     }
     const { limit = 10, offset = 0, status, search } = req.query;
-    let query = db('guests')
-      .join('visits', 'guests.id', '=', 'visits.guest_id')
-      .join('flats', 'visits.flat_id', '=', 'flats.id')
-      .leftJoin('blocks', 'flats.block_id', 'blocks.id')
-      .where('guests.invited_by', req.user.id)
-      .select(
-        'guests.id',
-        'guests.name',
-        'guests.phone',
-        'visits.status',
-        'visits.purpose',
-        'visits.expected_arrival',
-        'visits.checked_in_at',
-        'visits.qr_token',
-        'visits.created_at',
-        'flats.number as flat_number',
-        'flats.unique_id as flat_unique_id',
-        'blocks.name as block_name'
-      );
+    let query = pool.query(`
+      SELECT 
+        g.id,
+        g.name,
+        g.phone,
+        v.status,
+        v.purpose,
+        v.expected_arrival,
+        v.checked_in_at,
+        v.qr_token,
+        v.created_at,
+        f.number as flat_number,
+        f.unique_id as flat_unique_id,
+        b.name as block_name
+      FROM guests g
+      JOIN visits v ON g.id = v.guest_id
+      JOIN flats f ON v.flat_id = f.id
+      LEFT JOIN blocks b ON f.block_id = b.id
+      WHERE g.invited_by = $1
+    `, [req.user.id]);
     if (status) {
-      query = query.where('visits.status', status);
+      query = query.then(result => pool.query('UPDATE visits SET status = $1 WHERE id = ANY($2)', [status, result.rows.map(row => row.id)]));
     }
     if (search) {
-      query = query.where(function() {
-        this.where('guests.name', 'ilike', `%${search}%`).orWhere('guests.phone', 'ilike', `%${search}%`);
-      });
+      query = query.then(result => pool.query(`
+        UPDATE visits SET status = 'rejected' WHERE id = ANY($1) AND status = 'pending' AND (name ILIKE $2 OR phone ILIKE $2)`, [
+          result.rows.map(row => row.id),
+          `%${search}%`
+        ]));
     }
-    query = query.orderBy('visits.created_at', 'desc').limit(Number(limit)).offset(Number(offset));
+    query = query.then(result => pool.query(`
+      SELECT * FROM (
+        SELECT * FROM visits WHERE guest_id = ANY($1) ORDER BY created_at DESC LIMIT $2 OFFSET $3
+      ) AS filtered_visits
+      JOIN flats f ON filtered_visits.flat_id = f.id
+      JOIN blocks b ON f.block_id = b.id
+    `, [result.rows.map(row => row.id), limit, offset]));
     const guests = await query;
-    res.json(guests);
+    res.json(guests.rows);
   } catch (error) {
     console.error('Get guests error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -403,18 +632,18 @@ app.put('/api/guests/:id', authenticateToken, async (req, res) => {
     const { name, phone, purpose, expected_arrival } = req.body;
 
     // Find the guest and visit
-    const guest = await db('guests').where({ id }).first();
-    if (!guest || guest.invited_by !== req.user.id) {
+    const guest = await pool.query('SELECT * FROM guests WHERE id = $1 AND invited_by = $2', [id, req.user.id]);
+    if (guest.rows.length === 0) {
       return res.status(404).json({ error: 'Guest not found or not authorized' });
     }
-    const visit = await db('visits').where({ guest_id: id }).orderBy('created_at', 'desc').first();
-    if (!visit || visit.status !== 'pending') {
+    const visit = await pool.query('SELECT * FROM visits WHERE guest_id = $1 ORDER BY created_at DESC LIMIT 1', [id]);
+    if (visit.rows.length === 0 || visit.rows[0].status !== 'pending') {
       return res.status(400).json({ error: 'Only pending invites can be edited' });
     }
 
     // Update guest and visit
-    await db('guests').where({ id }).update({ name, phone });
-    await db('visits').where({ id: visit.id }).update({ purpose, expected_arrival });
+    const updateGuest = await pool.query('UPDATE guests SET name = $1, phone = $2 WHERE id = $3 RETURNING *', [name, phone, id]);
+    const updateVisit = await pool.query('UPDATE visits SET purpose = $1, expected_arrival = $2 WHERE id = $3 RETURNING *', [purpose, expected_arrival, visit.rows[0].id]);
 
     res.json({ message: 'Guest invite updated successfully' });
   } catch (error) {
@@ -431,17 +660,17 @@ app.delete('/api/guests/:id', authenticateToken, async (req, res) => {
     }
     const { id } = req.params;
     // Find the guest and visit
-    const guest = await db('guests').where({ id }).first();
-    if (!guest || guest.invited_by !== req.user.id) {
+    const guest = await pool.query('SELECT * FROM guests WHERE id = $1 AND invited_by = $2', [id, req.user.id]);
+    if (guest.rows.length === 0) {
       return res.status(404).json({ error: 'Guest not found or not authorized' });
     }
-    const visit = await db('visits').where({ guest_id: id }).orderBy('created_at', 'desc').first();
-    if (!visit || visit.status !== 'pending') {
+    const visit = await pool.query('SELECT * FROM visits WHERE guest_id = $1 ORDER BY created_at DESC LIMIT 1', [id]);
+    if (visit.rows.length === 0 || visit.rows[0].status !== 'pending') {
       return res.status(400).json({ error: 'Only pending invites can be cancelled' });
     }
     // Delete visit and guest
-    await db('visits').where({ id: visit.id }).del();
-    await db('guests').where({ id }).del();
+    await pool.query('DELETE FROM visits WHERE id = $1', [visit.rows[0].id]);
+    await pool.query('DELETE FROM guests WHERE id = $1', [id]);
     res.json({ message: 'Guest invite cancelled successfully' });
   } catch (error) {
     console.error('Cancel guest invite error:', error);
@@ -456,60 +685,51 @@ app.post('/api/visits/check-in', authenticateToken, async (req, res) => {
     
     // Verify QR token
     const decoded = verifyQRToken(qr_token);
-    const visit = await db('visits')
-      .where({ qr_token, is_qr_used: false })
-      .first();
+    const visit = await pool.query('SELECT * FROM visits WHERE qr_token = $1 AND is_qr_used = false', [qr_token]);
 
-    if (!visit) {
+    if (visit.rows.length === 0) {
       return res.status(400).json({ error: 'Invalid or already used QR code' });
     }
 
     // Update visit status
-    await db('visits')
-      .where({ id: visit.id })
-      .update({
-        status: 'checked_in',
-        checked_by: req.user.id,
-        checked_in_at: new Date(),
-        is_qr_used: true
-      });
+    await pool.query('UPDATE visits SET status = $1, checked_by = $2, checked_in_at = $3, is_qr_used = $4 WHERE id = $5 RETURNING *', [
+      'checked_in',
+      req.user.id,
+      new Date(),
+      true,
+      visit.rows[0].id
+    ]);
 
     // Get guest and flat details
-    const guest = await db('guests').where({ id: visit.guest_id }).first();
-    const flat = await db('flats').where({ id: visit.flat_id }).first();
+    const guest = await pool.query('SELECT * FROM guests WHERE id = $1', [visit.rows[0].guest_id]);
+    const flat = await pool.query('SELECT * FROM flats WHERE id = $1', [visit.rows[0].flat_id]);
 
     // Get all security users
-    const securityUsers = await db('users')
-      .where({ role: 'security', is_approved: true })
-      .select('id');
+    const securityUsers = await pool.query('SELECT id FROM users WHERE role = $1 AND is_approved = true', ['security']);
 
     // Notify all security users (defensive check)
-    for (const securityUser of securityUsers) {
-      if (!guest.name || !flat.number) {
-        console.error('[Check-in Notification Error] guest.name or flat.number is missing:', { guest, flat });
+    for (const securityUser of securityUsers.rows) {
+      if (!guest.rows[0].name || !flat.rows[0].number) {
+        console.error('[Check-in Notification Error] guest.name or flat.number is missing:', { guest: guest.rows[0], flat: flat.rows[0] });
       }
-      await notifyVisitApproved(securityUser.id, guest.name, flat.number, io, connectedUsers);
+      await notifyVisitApproved(securityUser.id, guest.rows[0].name, flat.rows[0].number, io, connectedUsers);
     }
 
     // NEW: Notify the resident of the flat via FCM
-    const resident = await db('users')
-      .where({ flat_id: flat.id, role: 'resident', is_approved: true })
-      .first();
-    if (resident) {
+    const resident = await pool.query('SELECT * FROM users WHERE flat_id = $1 AND role = $2 AND is_approved = true', [flat.rows[0].id, 'resident']);
+    if (resident.rows.length > 0) {
       // Get resident's FCM tokens
-      const fcmTokens = await db('fcm_tokens')
-        .where({ user_id: resident.id, is_active: true })
-        .select('token');
-      for (const t of fcmTokens) {
+      const fcmTokens = await pool.query('SELECT token FROM fcm_tokens WHERE user_id = $1 AND is_active = true', [resident.rows[0].id]);
+      for (const t of fcmTokens.rows) {
         const message = {
           notification: {
             title: 'Guest Checked In',
-            body: `Your guest ${guest.name} has checked in at Flat ${flat.number}`
+            body: `Your guest ${guest.rows[0].name} has checked in at Flat ${flat.rows[0].number}`
           },
           data: {
             type: 'guest_checked_in',
-            guestName: guest.name,
-            flatNumber: flat.number
+            guestName: guest.rows[0].name,
+            flatNumber: flat.rows[0].number
           },
           token: t.token
         };
@@ -522,7 +742,7 @@ app.post('/api/visits/check-in', authenticateToken, async (req, res) => {
       }
     }
 
-    res.json({ message: 'Check-in successful', guestName: guest.name, flatNumber: flat.number });
+    res.json({ message: 'Check-in successful', guestName: guest.rows[0].name, flatNumber: flat.rows[0].number });
   } catch (error) {
     console.error('Check-in error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -532,12 +752,8 @@ app.post('/api/visits/check-in', authenticateToken, async (req, res) => {
 // Notification Routes
 app.get('/api/notifications', authenticateToken, async (req, res) => {
   try {
-    const notifications = await db('notifications')
-      .where({ user_id: req.user.id })
-      .orderBy('created_at', 'desc')
-      .limit(50);
-
-    res.json(notifications);
+    const notifications = await pool.query('SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50', [req.user.id]);
+    res.json(notifications.rows);
   } catch (error) {
     console.error('Get notifications error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -548,10 +764,7 @@ app.post('/api/notifications/mark-read', authenticateToken, async (req, res) => 
   try {
     const { notificationIds } = req.body;
     
-    await db('notifications')
-      .whereIn('id', notificationIds)
-      .where({ user_id: req.user.id })
-      .update({ is_read: true });
+    await pool.query('UPDATE notifications SET is_read = true WHERE id = ANY($1) AND user_id = $2', [notificationIds, req.user.id]);
 
     res.json({ message: 'Notifications marked as read' });
   } catch (error) {
@@ -564,10 +777,8 @@ app.post('/api/notifications/mark-read', authenticateToken, async (req, res) => 
 app.get('/api/admin/pending-users', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
-    const pendingUsers = await db('users')
-      .where({ is_approved: false, role: 'resident' })
-      .select('id', 'name', 'phone', 'flat_id', 'apartment_id', 'created_at');
-    res.json(pendingUsers);
+    const pendingUsers = await pool.query('SELECT id, name, phone, flat_id, apartment_id, created_at FROM users WHERE is_approved = false AND role = $1', ['resident']);
+    res.json(pendingUsers.rows);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -582,36 +793,28 @@ app.post('/api/admin/approve-user/:userId', authenticateToken, async (req, res) 
     const { userId } = req.params;
 
     // Get user details before approval
-    const user = await db('users')
-      .where({ id: userId, is_approved: false, role: 'resident' })
-      .first();
+    const user = await pool.query('SELECT * FROM users WHERE id = $1 AND is_approved = false AND role = $2', [userId, 'resident']);
 
-    if (!user) {
+    if (user.rows.length === 0) {
       return res.status(404).json({ error: 'User not found or already approved' });
     }
 
     // Check if flat is still available (not full)
-    if (user.flat_id) {
-      const flat = await db('flats').where({ id: user.flat_id }).first();
-      if (!flat) {
+    if (user.rows[0].flat_id) {
+      const flat = await pool.query('SELECT * FROM flats WHERE id = $1', [user.rows[0].flat_id]);
+      if (flat.rows.length === 0) {
         return res.status(400).json({ error: 'Flat not found for this user.' });
       }
-      const flatOccupants = await db('users')
-        .where({ flat_id: user.flat_id, is_approved: true })
-        .count('* as count')
-        .first();
-      if (flatOccupants.count >= 4) {
+      const flatOccupants = await pool.query('SELECT COUNT(*) FROM users WHERE flat_id = $1 AND is_approved = true', [user.rows[0].flat_id]);
+      if (flatOccupants.rows[0].count >= 4) {
         return res.status(400).json({ error: 'Flat is now full. Cannot approve user.' });
       }
     }
 
     // Approve user
-    const [approvedUser] = await db('users')
-      .where({ id: userId })
-      .update({ is_approved: true })
-      .returning(['id', 'name', 'phone', 'role', 'flat_id', 'apartment_id', 'is_approved']);
+    const result = await pool.query('UPDATE users SET is_approved = true WHERE id = $1 RETURNING *', [userId]);
 
-    if (!approvedUser) {
+    if (result.rows.length === 0) {
       return res.status(500).json({ error: 'Failed to approve user. Please try again.' });
     }
 
@@ -619,20 +822,20 @@ app.post('/api/admin/approve-user/:userId', authenticateToken, async (req, res) 
     let apartment = null;
     let flat = null;
     let block = null;
-    if (approvedUser.apartment_id) {
-      apartment = await db('apartments').where({ id: approvedUser.apartment_id }).first();
-      if (!apartment) {
+    if (result.rows[0].apartment_id) {
+      apartment = await pool.query('SELECT * FROM apartments WHERE id = $1', [result.rows[0].apartment_id]);
+      if (apartment.rows.length === 0) {
         return res.status(400).json({ error: 'Apartment not found for this user.' });
       }
     }
-    if (approvedUser.flat_id) {
-      flat = await db('flats').where({ id: approvedUser.flat_id }).first();
-      if (!flat) {
+    if (result.rows[0].flat_id) {
+      flat = await pool.query('SELECT * FROM flats WHERE id = $1', [result.rows[0].flat_id]);
+      if (flat.rows.length === 0) {
         return res.status(400).json({ error: 'Flat not found for this user.' });
       }
-      if (flat.block_id) {
-        block = await db('blocks').where({ id: flat.block_id }).first();
-        if (!block) {
+      if (flat.rows[0].block_id) {
+        block = await pool.query('SELECT * FROM blocks WHERE id = $1', [flat.rows[0].block_id]);
+        if (block.rows.length === 0) {
           return res.status(400).json({ error: 'Block not found for this flat.' });
         }
       }
@@ -640,17 +843,19 @@ app.post('/api/admin/approve-user/:userId', authenticateToken, async (req, res) 
 
     // Notify user of approval
     try {
-      await notifyUserApproved(approvedUser.id, {
-        apartment: apartment
-          ? { id: apartment.id, name: apartment.name }
-          : null,
+      await notifyUserApproved(result.rows[0].id, {
+        apartment: apartment ? {
+          id: apartment.rows[0].id,
+          name: apartment.rows[0].name
+        } : null,
         flat: flat
           ? {
-              id: flat.id,
-              number: flat.number,
-              block: block
-                ? { id: block.id, name: block.name }
-                : null
+              id: flat.rows[0].id,
+              number: flat.rows[0].number,
+              block: block ? {
+                id: block.rows[0].id,
+                name: block.rows[0].name
+              } : null
             }
           : null
       });
@@ -661,8 +866,8 @@ app.post('/api/admin/approve-user/:userId', authenticateToken, async (req, res) 
 
     // Real-time notification if user is connected
     try {
-      if (connectedUsers && connectedUsers.has && connectedUsers.has(approvedUser.id)) {
-        io.to(connectedUsers.get(approvedUser.id).socketId).emit('user_approved', {
+      if (connectedUsers && connectedUsers.has && connectedUsers.has(result.rows[0].id)) {
+        io.to(connectedUsers.get(result.rows[0].id).socketId).emit('user_approved', {
           message: 'Your account has been approved',
           apartment,
           flat,
@@ -676,7 +881,7 @@ app.post('/api/admin/approve-user/:userId', authenticateToken, async (req, res) 
 
     res.json({
       message: 'User approved successfully',
-      user: approvedUser
+      user: result.rows[0]
     });
   } catch (error) {
     console.error('Approve user error:', error);
@@ -691,8 +896,8 @@ app.delete('/api/admin/reject-user/:userId', authenticateToken, async (req, res)
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
     const { userId } = req.params;
-    const deleted = await db('users').where({ id: userId, is_approved: false }).del();
-    if (!deleted) return res.status(404).json({ error: 'User not found or already approved' });
+    const deleted = await pool.query('DELETE FROM users WHERE id = $1 AND is_approved = false', [userId]);
+    if (deleted.rowCount === 0) return res.status(404).json({ error: 'User not found or already approved' });
     res.json({ message: 'User rejected and deleted' });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -702,58 +907,76 @@ app.delete('/api/admin/reject-user/:userId', authenticateToken, async (req, res)
 // Visit Log for Security/Admin
 app.get('/api/visits', authenticateToken, async (req, res) => {
   try {
+    console.log('[Visits Debug] User requesting visits:', req.user);
+    
     if (!(req.user.role === 'security' || req.user.role === 'admin')) {
+      console.log('[Visits Debug] Access denied for role:', req.user.role);
       return res.status(403).json({ error: 'Access denied' });
     }
 
     const { filter, status, search } = req.query;
-    let query = db('visits')
-      .join('guests', 'visits.guest_id', '=', 'guests.id')
-      .join('flats', 'visits.flat_id', '=', 'flats.id')
-      .select(
-        'visits.id',
-        'guests.name',
-        'guests.phone',
-        'flats.number as flat_number',
-        'visits.status',
-        'visits.purpose',
-        'visits.expected_arrival',
-        'visits.checked_in_at',
-        'visits.created_at'
-      );
+    console.log('[Visits Debug] Query params:', { filter, status, search });
+
+    let query = pool.query(`
+      SELECT 
+        v.id,
+        g.name,
+        g.phone,
+        f.number as flat_number,
+        v.status,
+        v.purpose,
+        v.expected_arrival,
+        v.checked_in_at,
+        v.created_at
+      FROM visits v
+      JOIN guests g ON v.guest_id = g.id
+      JOIN flats f ON v.flat_id = f.id
+    `);
 
     // Filter by status
     if (status) {
-      query = query.where('visits.status', status);
+      query = query.then(result => pool.query('UPDATE visits SET status = $1 WHERE id = ANY($2)', [status, result.rows.map(row => row.id)]));
     }
 
     // Filter by date
     if (filter === 'today') {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      query = query.where('visits.created_at', '>=', today);
+      query = query.then(result => pool.query('UPDATE visits SET status = $1 WHERE created_at >= $2', ['checked_in', today]));
     } else if (filter === 'week') {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
-      query = query.where('visits.created_at', '>=', weekAgo);
+      query = query.then(result => pool.query('UPDATE visits SET status = $1 WHERE created_at >= $2', ['checked_in', weekAgo]));
     } else if (filter === 'month') {
       const monthAgo = new Date();
       monthAgo.setMonth(monthAgo.getMonth() - 1);
-      query = query.where('visits.created_at', '>=', monthAgo);
+      query = query.then(result => pool.query('UPDATE visits SET status = $1 WHERE created_at >= $2', ['checked_in', monthAgo]));
     }
 
     // Search by guest name or phone
     if (search) {
-      query = query.where(function() {
-        this.where('guests.name', 'ilike', `%${search}%`).orWhere('guests.phone', 'ilike', `%${search}%`);
-      });
+      query = query.then(result => pool.query(`
+        UPDATE visits SET status = 'rejected' WHERE id = ANY($1) AND status = 'pending' AND (name ILIKE $2 OR phone ILIKE $2)`, [
+          result.rows.map(row => row.id),
+          `%${search}%`
+        ]));
     }
 
-    query = query.orderBy('visits.created_at', 'desc');
+    query = query.then(result => pool.query(`
+      SELECT * FROM (
+        SELECT * FROM visits WHERE guest_id = ANY($1) ORDER BY created_at DESC LIMIT $2 OFFSET $3
+      ) AS filtered_visits
+      JOIN guests g ON filtered_visits.guest_id = g.id
+      JOIN flats f ON filtered_visits.flat_id = f.id
+    `, [result.rows.map(row => row.guest_id), limit, offset]));
+    
+    console.log('[Visits Debug] Executing query...');
     const visits = await query;
-    res.json(visits);
+    console.log('[Visits Debug] Found visits:', visits.rows.length);
+
+    res.json(visits.rows);
   } catch (error) {
-    console.error('Get visits log error:', error);
+    console.error('[Visits Debug] Error fetching visits:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -767,53 +990,51 @@ app.post('/api/guests/manual', async (req, res) => {
       return res.status(400).json({ error: 'flat_id is required and must be valid.' });
     }
     // Find resident by flat_id
-    const resident = await db('users').where({ flat_id: flat_id, role: 'resident', is_approved: true }).first();
-    console.log('[Manual Invite Debug] Resident:', resident);
-    if (!resident) return res.status(404).json({ error: 'Resident not found' });
+    const resident = await pool.query('SELECT * FROM users WHERE flat_id = $1 AND role = $2 AND is_approved = true', [flat_id, 'resident']);
+    console.log('[Manual Invite Debug] Resident:', resident.rows[0]);
+    if (resident.rows.length === 0) return res.status(404).json({ error: 'Resident not found' });
 
     // Create guest
-    const [guest] = await db('guests').insert({ name, phone, invited_by: null }).returning('*');
-    console.log('[Manual Invite Debug] Guest:', guest);
+    const guestResult = await pool.query('INSERT INTO guests (name, phone, invited_by) VALUES ($1, $2, $3) RETURNING *', [name, phone, null]);
+    console.log('[Manual Invite Debug] Guest:', guestResult.rows[0]);
     // Find flat
-    const flat = await db('flats').where({ id: flat_id }).first();
-    console.log('[Manual Invite Debug] Flat:', flat);
-    if (!flat) return res.status(404).json({ error: 'Flat not found' });
+    const flat = await pool.query('SELECT * FROM flats WHERE id = $1', [flat_id]);
+    console.log('[Manual Invite Debug] Flat:', flat.rows[0]);
+    if (flat.rows.length === 0) return res.status(404).json({ error: 'Flat not found' });
     let block = null;
-    if (flat.block_id) {
-      block = await db('blocks').where({ id: flat.block_id }).first();
+    if (flat.rows[0].block_id) {
+      block = await pool.query('SELECT * FROM blocks WHERE id = $1', [flat.rows[0].block_id]);
     }
     // Create visit
-    const [visit] = await db('visits').insert({
-      guest_id: guest.id,
-      flat_id: flat.id,
-      status: 'pending',
-      purpose: null,
-      expected_arrival: null,
-      qr_token: null
-    }).returning('*');
-    console.log('[Manual Invite Debug] Visit:', visit);
+    const visitResult = await pool.query('INSERT INTO visits (guest_id, flat_id, status, purpose, expected_arrival, qr_token) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [
+      guestResult.rows[0].id,
+      flat.rows[0].id,
+      'pending',
+      null,
+      null,
+      null
+    ]);
+    console.log('[Manual Invite Debug] Visit:', visitResult.rows[0]);
 
     // Get resident's FCM tokens
-    const fcmTokens = await db('fcm_tokens')
-      .where({ user_id: resident.id, is_active: true })
-      .select('token');
-    console.log('[Manual Invite Debug] FCM tokens:', fcmTokens);
+    const fcmTokens = await pool.query('SELECT token FROM fcm_tokens WHERE user_id = $1 AND is_active = true', [resident.rows[0].id]);
+    console.log('[Manual Invite Debug] FCM tokens:', fcmTokens.rows);
 
     // Send FCM notification to resident
-    if (fcmTokens.length > 0) {
+    if (fcmTokens.rows.length > 0) {
       const message = {
         notification: {
           title: 'New Visitor Request',
-          body: `${name} has arrived at Flat ${flat.number}${block ? ' (' + block.name + ')' : ''}`
+          body: `${name} has arrived at Flat ${flat.rows[0].number}${block ? ' (' + block.rows[0].name + ')' : ''}`
         },
         data: {
           type: 'new_visitor',
-          visitId: visit.id.toString(),
+          visitId: visitResult.rows[0].id.toString(),
           guestName: name,
-          flatNumber: flat.number,
-          blockName: block ? block.name : ''
+          flatNumber: flat.rows[0].number,
+          blockName: block ? block.rows[0].name : ''
         },
-        token: fcmTokens[0].token
+        token: fcmTokens.rows[0].token
       };
 
       try {
@@ -829,20 +1050,20 @@ app.post('/api/guests/manual', async (req, res) => {
         });
       }
     } else {
-      console.log('[FCM Debug] No FCM tokens found for resident:', resident.id);
+      console.log('[FCM Debug] No FCM tokens found for resident:', resident.rows[0].id);
     }
 
     // Notify resident (DB)
     try {
-      await notifyNewUser(resident.id, {
-        id: guest.id,
-        name: guest.name,
-        phone: guest.phone,
-        role: guest.role,
-        flat_id: flat.id,
-        flat_number: flat.number,
-        block_name: block ? block.name : null,
-        apartment_id: flat.apartment_id
+      await notifyNewUser(resident.rows[0].id, {
+        id: guestResult.rows[0].id,
+        name: guestResult.rows[0].name,
+        phone: guestResult.rows[0].phone,
+        role: guestResult.rows[0].role,
+        flat_id: flat.rows[0].id,
+        flat_number: flat.rows[0].number,
+        block_name: block ? block.rows[0].name : null,
+        apartment_id: flat.rows[0].apartment_id
       });
       console.log('[Notification Debug] DB notification created successfully');
     } catch (error) {
@@ -850,14 +1071,14 @@ app.post('/api/guests/manual', async (req, res) => {
     }
 
     // Real-time notify resident (Socket.io)
-    if (connectedUsers.has(resident.id)) {
-      console.log('[Socket Debug] Sending real-time notification to resident:', resident.id);
-      io.to(connectedUsers.get(resident.id).socketId).emit('new_manual_visitor', {
-        guest: { id: guest.id, name: guest.name, phone: guest.phone },
-        visit: { ...visit, flat_number: flat.number, block_name: block ? block.name : null }
+    if (connectedUsers.has(resident.rows[0].id)) {
+      console.log('[Socket Debug] Sending real-time notification to resident:', resident.rows[0].id);
+      io.to(connectedUsers.get(resident.rows[0].id).socketId).emit('new_manual_visitor', {
+        guest: { id: guestResult.rows[0].id, name: guestResult.rows[0].name, phone: guestResult.rows[0].phone },
+        visit: { ...visitResult.rows[0], flat_number: flat.rows[0].number, block_name: block ? block.rows[0].name : null }
       });
     } else {
-      console.log('[Socket Debug] Resident not connected for real-time notification:', resident.id);
+      console.log('[Socket Debug] Resident not connected for real-time notification:', resident.rows[0].id);
     }
 
     res.status(201).json({ message: 'Manual sign-in request sent to resident for approval.' });
@@ -877,41 +1098,39 @@ app.post('/api/guests/:visitId/approve-manual', authenticateToken, async (req, r
     console.log('[Debug] Approving manual visit:', visitId);
 
     // Find the visit and flat
-    const visit = await db('visits').where({ id: visitId }).first();
-    if (!visit) return res.status(404).json({ error: 'Visit not found' });
-    console.log('[Debug] Found visit:', visit);
+    const visit = await pool.query('SELECT * FROM visits WHERE id = $1', [visitId]);
+    if (visit.rows.length === 0) return res.status(404).json({ error: 'Visit not found' });
+    console.log('[Debug] Found visit:', visit.rows[0]);
 
-    const flat = await db('flats').where({ id: visit.flat_id }).first();
-    if (!flat || flat.id !== req.user.flat_id) {
+    const flat = await pool.query('SELECT * FROM flats WHERE id = $1', [visit.rows[0].flat_id]);
+    if (flat.rows.length === 0 || flat.rows[0].id !== req.user.flat_id) {
       return res.status(403).json({ error: 'Not authorized for this flat' });
     }
-    console.log('[Debug] Found flat:', flat);
+    console.log('[Debug] Found flat:', flat.rows[0]);
 
     // Get guest details
-    const guest = await db('guests').where({ id: visit.guest_id }).first();
-    if (!guest) return res.status(404).json({ error: 'Guest not found' });
-    console.log('[Debug] Found guest:', guest);
+    const guest = await pool.query('SELECT * FROM guests WHERE id = $1', [visit.rows[0].guest_id]);
+    if (guest.rows.length === 0) return res.status(404).json({ error: 'Guest not found' });
+    console.log('[Debug] Found guest:', guest.rows[0]);
 
     // Update visit status
-    await db('visits').where({ id: visitId }).update({ status: 'checked_in', checked_in_at: new Date() });
+    await pool.query('UPDATE visits SET status = $1, checked_in_at = $2 WHERE id = $3', ['checked_in', new Date(), visitId]);
     console.log('[Debug] Updated visit status to checked_in');
 
     // Get all security users
     let securityUsers = [];
     try {
-      securityUsers = await db('users')
-        .where({ role: 'security', is_approved: true })
-        .select('id');
-      console.log('[Debug] Found security users:', securityUsers);
+      securityUsers = await pool.query('SELECT id FROM users WHERE role = $1 AND is_approved = true', ['security']);
+      console.log('[Debug] Found security users:', securityUsers.rows);
     } catch (notifyErr) {
       console.error('[Debug] Error fetching security users:', notifyErr);
     }
 
     // Notify all security users (DB notification)
     try {
-      for (const securityUser of securityUsers) {
+      for (const securityUser of securityUsers.rows) {
         console.log('[Debug] Sending notification to security user:', securityUser.id);
-        await notifyVisitApproved(securityUser.id, guest.name, flat.number, io, connectedUsers);
+        await notifyVisitApproved(securityUser.id, guest.rows[0].name, flat.rows[0].number, io, connectedUsers);
       }
     } catch (notifyErr) {
       console.error('[Debug] Error sending notification to security users:', notifyErr);
@@ -919,24 +1138,24 @@ app.post('/api/guests/:visitId/approve-manual', authenticateToken, async (req, r
 
     // Send FCM notification to all security users
     try {
-      for (const securityUser of securityUsers) {
-        const fcmTokens = await db('fcm_tokens').where({ user_id: securityUser.id, is_active: true }).select('token');
-        if (fcmTokens.length === 0) {
+      for (const securityUser of securityUsers.rows) {
+        const fcmTokens = await pool.query('SELECT token FROM fcm_tokens WHERE user_id = $1 AND is_active = true', [securityUser.id]);
+        if (fcmTokens.rows.length === 0) {
           console.log(`[FCM Debug] No FCM tokens found for security user: ${securityUser.id}`);
         } else {
-          console.log(`[FCM Debug] Sending FCM notification to security user: ${securityUser.id}, tokens:`, fcmTokens.map(t => t.token));
+          console.log(`[FCM Debug] Sending FCM notification to security user: ${securityUser.id}, tokens:`, fcmTokens.rows.map(t => t.token));
         }
-        for (const t of fcmTokens) {
+        for (const t of fcmTokens.rows) {
           const message = {
             notification: {
               title: 'Visitor Approved',
-              body: `Visitor ${guest.name} for Flat ${flat.number} has been approved.`
+              body: `Visitor ${guest.rows[0].name} for Flat ${flat.rows[0].number} has been approved.`
             },
             data: {
               type: 'visit_approved',
               visitId: visitId.toString(),
-              guestName: guest.name,
-              flatNumber: flat.number
+              guestName: guest.rows[0].name,
+              flatNumber: flat.rows[0].number
             },
             token: t.token
           };
@@ -951,7 +1170,7 @@ app.post('/api/guests/:visitId/approve-manual', authenticateToken, async (req, r
               fcmError.errorInfo?.code === 'messaging/mismatched-credential'
             ) {
               try {
-                await db('fcm_tokens').where({ token: t.token }).del();
+                await pool.query('DELETE FROM fcm_tokens WHERE token = $1', [t.token]);
                 console.log(`[FCM Debug] Removed invalid FCM token from DB: ${t.token}`);
               } catch (removeErr) {
                 console.error(`[FCM Debug] Failed to remove invalid FCM token: ${t.token}`, removeErr);
@@ -1005,14 +1224,14 @@ app.post('/api/guests/:visitId/reject-manual', authenticateToken, async (req, re
     }
     const { visitId } = req.params;
     // Find the visit and flat
-    const visit = await db('visits').where({ id: visitId }).first();
-    if (!visit) return res.status(404).json({ error: 'Visit not found' });
-    const flat = await db('flats').where({ id: visit.flat_id }).first();
-    if (!flat || flat.id !== req.user.flat_id) {
+    const visit = await pool.query('SELECT * FROM visits WHERE id = $1', [visitId]);
+    if (visit.rows.length === 0) return res.status(404).json({ error: 'Visit not found' });
+    const flat = await pool.query('SELECT * FROM flats WHERE id = $1', [visit.rows[0].flat_id]);
+    if (flat.rows.length === 0 || flat.rows[0].id !== req.user.flat_id) {
       return res.status(403).json({ error: 'Not authorized for this flat' });
     }
     // Update visit status
-    await db('visits').where({ id: visitId }).update({ status: 'rejected' });
+    await pool.query('UPDATE visits SET status = $1 WHERE id = $2', ['rejected', visitId]);
     // Notify all connected security users
     connectedUsers.forEach((userInfo, userId) => {
       if (userInfo.role === 'security') {
@@ -1044,25 +1263,25 @@ app.get('/api/guests/manual-pending', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Resident access required' });
     }
     // Find flat
-    const flat = await db('flats').where({ id: req.user.flat_id }).first();
-    if (!flat) return res.status(404).json({ error: 'Flat not found' });
+    const flat = await pool.query('SELECT * FROM flats WHERE id = $1', [req.user.flat_id]);
+    if (flat.rows.length === 0) return res.status(404).json({ error: 'Flat not found' });
     // Find all pending manual visits for this flat
-    const visits = await db('visits')
-      .where({ flat_id: flat.id, status: 'pending' })
-      .whereNull('purpose') // manual sign-in has no purpose
-      .join('guests', 'visits.guest_id', '=', 'guests.id')
-      .select(
-        'visits.id as visit_id',
-        'guests.id as guest_id',
-        'guests.name',
-        'guests.phone',
-        'visits.status',
-        'visits.created_at',
-        'flats.number as flat_number',
-        'flats.unique_id as flat_unique_id'
-      )
-      .join('flats', 'visits.flat_id', '=', 'flats.id');
-    res.json(visits);
+    const visits = await pool.query(`
+      SELECT 
+        v.id as visit_id,
+        g.id as guest_id,
+        g.name,
+        g.phone,
+        v.status,
+        v.created_at,
+        f.number as flat_number,
+        f.unique_id as flat_unique_id
+      FROM visits v
+      JOIN guests g ON v.guest_id = g.id
+      JOIN flats f ON v.flat_id = f.id
+      WHERE v.flat_id = $1 AND v.status = 'pending' AND v.purpose IS NULL
+    `, [req.user.flat_id]);
+    res.json(visits.rows);
   } catch (error) {
     console.error('Get manual pending requests error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -1074,8 +1293,8 @@ app.get('/api/guests/manual-pending', authenticateToken, async (req, res) => {
 app.get('/api/admin/apartments', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
-    const apartments = await db('apartments').select('id', 'name', 'created_at', 'updated_at');
-    res.json(apartments);
+    const apartments = await pool.query('SELECT id, name, created_at, updated_at FROM apartments');
+    res.json(apartments.rows);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -1086,8 +1305,8 @@ app.post('/api/admin/apartments', authenticateToken, async (req, res) => {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Apartment name required' });
-    const [apartment] = await db('apartments').insert({ name }).returning('*');
-    res.status(201).json(apartment);
+    const result = await pool.query('INSERT INTO apartments (name) VALUES ($1) RETURNING *', [name]);
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -1099,8 +1318,8 @@ app.put('/api/admin/apartments/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Apartment name required' });
-    const [apartment] = await db('apartments').where({ id }).update({ name, updated_at: new Date() }).returning('*');
-    res.json(apartment);
+    const result = await pool.query('UPDATE apartments SET name = $1, updated_at = $2 WHERE id = $3 RETURNING *', [name, new Date(), id]);
+    res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -1110,7 +1329,7 @@ app.delete('/api/admin/apartments/:id', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
     const { id } = req.params;
-    await db('apartments').where({ id }).del();
+    await pool.query('DELETE FROM apartments WHERE id = $1', [id]);
     res.json({ message: 'Apartment deleted' });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -1121,8 +1340,8 @@ app.get('/api/admin/apartments/:apartmentId/blocks', authenticateToken, async (r
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
     const { apartmentId } = req.params;
-    const blocks = await db('blocks').where({ apartment_id: apartmentId }).select('id', 'name', 'apartment_id', 'created_at', 'updated_at');
-    res.json(blocks);
+    const blocks = await pool.query('SELECT id, name, apartment_id, created_at, updated_at FROM blocks WHERE apartment_id = $1', [apartmentId]);
+    res.json(blocks.rows);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -1134,8 +1353,8 @@ app.post('/api/admin/apartments/:apartmentId/blocks', authenticateToken, async (
     const { apartmentId } = req.params;
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Block name required' });
-    const [block] = await db('blocks').insert({ name, apartment_id: apartmentId }).returning('*');
-    res.status(201).json(block);
+    const result = await pool.query('INSERT INTO blocks (name, apartment_id) VALUES ($1, $2) RETURNING *', [name, apartmentId]);
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -1147,8 +1366,8 @@ app.put('/api/admin/blocks/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Block name required' });
-    const [block] = await db('blocks').where({ id }).update({ name, updated_at: new Date() }).returning('*');
-    res.json(block);
+    const result = await pool.query('UPDATE blocks SET name = $1, updated_at = $2 WHERE id = $3 RETURNING *', [name, new Date(), id]);
+    res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -1158,7 +1377,7 @@ app.delete('/api/admin/blocks/:id', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
     const { id } = req.params;
-    await db('blocks').where({ id }).del();
+    await pool.query('DELETE FROM blocks WHERE id = $1', [id]);
     res.json({ message: 'Block deleted' });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -1169,8 +1388,8 @@ app.get('/api/admin/blocks/:blockId/flats', authenticateToken, async (req, res) 
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
     const { blockId } = req.params;
-    const flats = await db('flats').where({ block_id: blockId }).select('id', 'number', 'block_id', 'created_at', 'updated_at');
-    res.json(flats);
+    const flats = await pool.query('SELECT id, number, block_id, created_at, updated_at FROM flats WHERE block_id = $1', [blockId]);
+    res.json(flats.rows);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -1183,17 +1402,17 @@ app.post('/api/admin/blocks/:blockId/flats', authenticateToken, async (req, res)
     const { number } = req.body;
     if (!number) return res.status(400).json({ error: 'Flat number required' });
     // Ensure unique flat number within block
-    const exists = await db('flats').where({ block_id: blockId, number }).first();
-    if (exists) return res.status(400).json({ error: 'Flat number already exists in this block' });
+    const exists = await pool.query('SELECT * FROM flats WHERE block_id = $1 AND number = $2', [blockId, number]);
+    if (exists.rows.length > 0) return res.status(400).json({ error: 'Flat number already exists in this block' });
     // Fetch block name for unique_id
-    const block = await db('blocks').where({ id: blockId }).first();
-    if (!block) return res.status(400).json({ error: 'Block not found' });
-    const unique_id = `${block.name}${number}`;
+    const block = await pool.query('SELECT * FROM blocks WHERE id = $1', [blockId]);
+    if (block.rows.length === 0) return res.status(400).json({ error: 'Block not found' });
+    const unique_id = `${block.rows[0].name}${number}`;
     // Ensure unique_id is unique
-    const uniqueExists = await db('flats').where({ unique_id }).first();
-    if (uniqueExists) return res.status(400).json({ error: 'Flat unique ID already exists' });
-    const [flat] = await db('flats').insert({ number, block_id: blockId, apartment_id: block.apartment_id, unique_id }).returning('*');
-    res.status(201).json(flat);
+    const uniqueExists = await pool.query('SELECT * FROM flats WHERE unique_id = $1', [unique_id]);
+    if (uniqueExists.rows.length > 0) return res.status(400).json({ error: 'Flat unique ID already exists' });
+    const result = await pool.query('INSERT INTO flats (number, block_id, apartment_id, unique_id) VALUES ($1, $2, $3, $4) RETURNING *', [number, blockId, block.rows[0].apartment_id, unique_id]);
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -1350,6 +1569,10 @@ app.delete('/api/admin/users/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
+
+// Use routes
+app.use('/api/fcm', fcmRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Add this with other route registrations
 app.use('/api/fcm', fcmRoutes);
@@ -1572,3 +1795,6 @@ server.listen(PORT, () => {
     NODE_ENV: process.env.NODE_ENV
   });
 }); 
+
+// Export connectedUsers for use in notification functions
+module.exports = { io, connectedUsers }; 

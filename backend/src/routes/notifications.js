@@ -1,83 +1,97 @@
 const express = require('express');
 const router = express.Router();
-const admin = require('../firebase-admin');
-const db = require('../db');
+const fcmService = require('../services/fcmService');
+const { sendUserNotification } = require('../utils/notifications');
 
 // Register FCM token
 router.post('/register-token', async (req, res) => {
   try {
-    const { userId, fcmToken } = req.body;
+    const { userId, fcmToken, deviceType } = req.body;
     
-    // Store token in database
-    await db.query(
-      'INSERT INTO fcm_tokens (user_id, token) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET token = $2',
-      [userId, fcmToken]
+    if (!userId || !fcmToken) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const success = await fcmService.saveToken(userId, fcmToken, deviceType);
+    
+    if (success) {
+      res.json({ success: true, message: 'Token registered successfully' });
+    } else {
+      res.status(400).json({ error: 'Failed to register token' });
+    }
+  } catch (error) {
+    console.error('[FCM Debug] Error registering FCM token:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Send test notification
+router.post('/send-test', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'Missing userId' });
+    }
+
+    const notification = {
+      title: 'Test Notification',
+      body: 'This is a test notification from the server',
+      data: {
+        type: 'test',
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    const success = await fcmService.sendNotification(userId, notification);
+    
+    if (success) {
+      res.json({ success: true, message: 'Test notification sent successfully' });
+    } else {
+      res.status(400).json({ error: 'Failed to send test notification' });
+    }
+  } catch (error) {
+    console.error('[FCM Debug] Error sending test notification:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Send notification for user pending approval
+router.post('/pending-approval', async (req, res) => {
+  try {
+    const { adminId, userName, userId, io, connectedUsers } = req.body;
+    
+    if (!adminId || !userName || !userId) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // 1. Create notification for admin
+    const notification = await sendUserNotification(
+      adminId,              // ID of the admin user
+      'pending_approval',   // Notification type
+      'A new user requires approval.', // Message
+      { userName, userId }, // Metadata
+      io,
+      connectedUsers
     );
     
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error registering FCM token:', error);
-    res.status(500).json({ error: 'Failed to register token' });
-  }
-});
-
-// Send notification to user
-router.post('/send', async (req, res) => {
-  try {
-    const { userId, title, body } = req.body;
-    
-    // Get user's FCM token
-    const result = await db.query('SELECT token FROM fcm_tokens WHERE user_id = $1', [userId]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User token not found' });
+    if (!notification) {
+      return res.status(400).json({ error: 'Failed to send notification' });
     }
-    
-    const token = result.rows[0].token;
-    
-    // Send notification
-    const message = {
-      notification: {
-        title,
-        body
-      },
-      token
-    };
-    
-    const response = await admin.messaging().send(message);
-    res.json({ success: true, response });
-  } catch (error) {
-    console.error('Error sending notification:', error);
-    res.status(500).json({ error: 'Failed to send notification' });
-  }
-});
 
-// Test notification endpoint
-router.post('/test', async (req, res) => {
-  try {
-    const { userId, title = 'Test Notification', body = 'This is a test notification' } = req.body;
-    
-    // Get user's FCM token
-    const result = await db.query('SELECT token FROM fcm_tokens WHERE user_id = $1', [userId]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User token not found' });
+    // 2. (Optional) Update pending list for all admins in real time
+    if (io && connectedUsers) {
+      for (const [userId, userInfo] of connectedUsers.entries()) {
+        if (userInfo.role === 'admin') {
+          io.to(userInfo.socketId).emit('refresh_pending_users');
+        }
+      }
     }
-    
-    const token = result.rows[0].token;
-    
-    // Send notification
-    const message = {
-      notification: {
-        title,
-        body
-      },
-      token
-    };
-    
-    const response = await admin.messaging().send(message);
-    res.json({ success: true, response });
+
+    res.json({ success: true, message: 'Approval notification sent successfully' });
   } catch (error) {
-    console.error('Error sending test notification:', error);
-    res.status(500).json({ error: 'Failed to send test notification' });
+    console.error('[Notification Debug] Error sending approval notification:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
