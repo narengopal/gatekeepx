@@ -21,6 +21,7 @@
     "framer-motion": "^7.6.16",
     "jsonwebtoken": "^9.0.0",
     "knex": "^2.5.1",
+    "lodash": "^4.17.21",
     "pg": "^8.10.0",
     "react-router-dom": "^7.6.0",
     "react-toastify": "^11.0.5",
